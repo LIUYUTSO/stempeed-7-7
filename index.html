@@ -201,6 +201,11 @@ details.allday .ev{grid-template-columns:1fr 30px}
   fill:#1A1A1A;pointer-events:none;
 }
 .zone.dim{opacity:.22}
+#mapsvg{touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+#mapsvg:active{cursor:grabbing}
+#mapsvg .lbl-sm{display:none}
+#mapsvg.zoomed .lbl-sm{display:block}
+.road-lb{font-size:6px;fill:#B4AA98;letter-spacing:.12em;font-family:"Space Grotesk"}
 #gpspin{transition:transform .8s ease}
 .pin-ring{animation:ring 2.4s ease-out infinite;transform-origin:center}
 @keyframes ring{0%{opacity:.5;transform:scale(.4)}100%{opacity:0;transform:scale(1.8)}}
@@ -243,7 +248,7 @@ details.allday .ev{grid-template-columns:1fr 30px}
 
 <section class="mapsec">
   <div class="map-head">
-    <div class="map-title">Park Map · 點色塊篩選</div>
+    <div class="map-title">Park Map · 點色塊篩選 · 雙指縮放</div>
     <div style="display:flex;gap:8px">
       <button class="here-btn" id="hereBtn">I'm here</button>
       <button class="locate" id="locBtn">定位</button>
@@ -696,61 +701,61 @@ const GATES=[
 ];
 function renderMap(){
   const svg=document.getElementById("mapsvg");
-  const rr=(k,w,h,rot=0)=>{
+  const rr=(k,w,h,rot=0,minor=false,labelAbove=false)=>{
     const V=VENUES[k],x=V.mx,y=V.my;
+    const ly=labelAbove?y-h/2-5:y+h/2+10;
     return `<g class="zone" data-v="${k}">
       <rect x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" fill="${V.c}" opacity=".85"${rot?` transform="rotate(${rot} ${x} ${y})"`:""}/>
-      <text x="${x}" y="${y+h/2+10}" text-anchor="middle">${V.lb}</text></g>`;
+      <text${minor?' class="lbl-sm"':''} x="${x}" y="${ly}" text-anchor="middle">${V.lb}</text></g>`;
   };
   let h=`<defs><pattern id="hatch" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
     <line x1="0" y1="0" x2="0" y2="6" stroke="#E6DCC2" stroke-width="2"/></pattern></defs>
-  <!-- 街道：Macleod Tr、12 Ave、Stampede Trail→Olympic Way -->
-  <line x1="18" y1="6" x2="18" y2="324" stroke="#E5DFD5" stroke-width="3"/>
-  <line x1="6" y1="12" x2="300" y2="12" stroke="#E5DFD5" stroke-width="3"/>
-  <path d="M 164 12 L 164 100 C 164 150 178 200 172 280" stroke="#E5DFD5" stroke-width="3" fill="none"/>
-  <!-- 施工區（官方黃斜線）：Stampede Trail 東側、Victoria Park 南側 -->
-  <path d="M 176 22 L 232 22 L 226 70 L 180 74 Z" fill="url(#hatch)" opacity=".6"/>
+  <!-- 主要幹道 -->
+  <line x1="18" y1="6" x2="18" y2="324" stroke="#DBD2C2" stroke-width="4"/>
+  <text class="road-lb" x="11" y="180" transform="rotate(-90 11 180)" text-anchor="middle">MACLEOD TR</text>
+  <line x1="6" y1="14" x2="300" y2="14" stroke="#DBD2C2" stroke-width="4"/>
+  <text class="road-lb" x="52" y="9">12 AVE</text>
+  <path d="M 164 14 L 164 100 C 164 150 178 200 172 280" stroke="#DBD2C2" stroke-width="4" fill="none"/>
+  <text class="road-lb" x="156" y="58" transform="rotate(-90 156 58)" text-anchor="middle">STAMPEDE TRAIL</text>
+  <text class="road-lb" x="182" y="232" transform="rotate(84 182 232)" text-anchor="middle">OLYMPIC WAY</text>
+  <line x1="6" y1="121" x2="58" y2="121" stroke="#DBD2C2" stroke-width="3"/>
+  <text class="road-lb" x="26" y="116">17 AVE</text>
+  <line x1="6" y1="324" x2="150" y2="324" stroke="#DBD2C2" stroke-width="4"/>
+  <text class="road-lb" x="40" y="319">25 AVE</text>
+  <!-- 施工區 -->
+  <path d="M 176 24 L 232 24 L 226 70 L 180 74 Z" fill="url(#hatch)" opacity=".6"/>
   <path d="M 34 138 L 70 134 L 66 168 L 32 170 Z" fill="url(#hatch)" opacity=".6"/>
-  <!-- Cowboys Casino（園區外地標） -->
-  <rect x="106" y="20" width="34" height="18" fill="#8C2F1B" opacity=".35"/>
-  <text x="123" y="49" text-anchor="middle" font-size="6.5" fill="#9A938A" font-family="Space Grotesk" letter-spacing=".05em">COWBOYS CASINO</text>
-  <!-- Elbow River：東北入、camp 西側橋、沿東南下、繞賽道、Erlton 橋西出 -->
+  <rect x="106" y="22" width="34" height="16" fill="#8C2F1B" opacity=".35"/>
+  <text x="123" y="48" text-anchor="middle" font-size="6" fill="#9A938A" font-family="Space Grotesk" letter-spacing=".05em" class="lbl-sm">COWBOYS CASINO</text>
+  <!-- Elbow River -->
   <path d="M 296 0 C 292 50 288 90 289 126 C 290 176 268 236 226 282 C 196 314 134 322 72 318"
     stroke="#D9E3E6" stroke-width="11" fill="none"/>
   <line x1="282" y1="112" x2="298" y2="112" stroke="#F3EEE6" stroke-width="5"/>
   <line x1="64" y1="314" x2="80" y2="322" stroke="#F3EEE6" stroke-width="5"/>
   <text x="300" y="212" font-size="7" fill="#9AAAB0" font-family="Space Grotesk" letter-spacing=".08em">ELBOW R.</text>
-  <!-- Midway（官方紫色區，裝飾） -->
   <path d="M 66 152 L 148 148 L 156 200 L 132 242 L 62 236 Z" fill="#DCC9DA" opacity=".45"/>
-  <!-- FUNtier（官方黃色帶，裝飾底） -->
   <path d="M 222 150 L 268 146 L 272 208 L 228 214 Z" fill="#EBDCA8" opacity=".4"/>`;
   for(const g of GATES){
     h+=`<text x="${g.mx}" y="${g.my}" text-anchor="middle" font-size="7" fill="#6B6B6B" font-family="Space Grotesk" letter-spacing=".06em">${g.lb}</text>`;
   }
-  // BMO Centre — 官方藍色建築群（西北翼群＋南主廳缺口）
   {const V=VENUES.bmo,x=V.mx,y=V.my;
    h+=`<g class="zone" data-v="bmo"><path d="M ${x-40} ${y-52} L ${x-4} ${y-64} L ${x+28} ${y-46} L ${x+14} ${y-28} L ${x+44} ${y-14} L ${x+40} ${y+16} L ${x+10} ${y+26} L ${x+2} ${y+10} L ${x-24} ${y+22} L ${x-38} ${y-6} Z" fill="${V.c}" opacity=".85"/>
-   <text x="${x}" y="${y+38}" text-anchor="middle">${V.lb}</text></g>`;}
-  h+=rr("oasis",26,11);
-  h+=rr("taste",26,11);
-  h+=rr("plaza",26,11);
-  // Big Four — 官方西側直向長棟
+   <text x="${x-4}" y="${y-2}" text-anchor="middle" fill="#FAF7F2">${V.lb}</text></g>`;}
+  h+=rr("oasis",26,11,0,true,true);
+  h+=rr("taste",26,11,0,true,true);
+  h+=rr("plaza",26,11,0,true);
   h+=rr("big4",20,54,6);
-  // Saddledome — 圓頂
   {const V=VENUES.dome,x=V.mx,y=V.my;
    h+=`<g class="zone" data-v="dome"><ellipse cx="${x}" cy="${y}" rx="26" ry="20" fill="${V.c}" opacity=".9"/>
    <text x="${x}" y="${y-26}" text-anchor="middle">${V.lb}</text></g>`;}
-  h+=rr("comp",36,13);
-  // Elbow River Camp — 河東直向帶
+  h+=rr("comp",36,13,0,false,true);
   {const V=VENUES.elbow,x=V.mx,y=V.my;
    h+=`<g class="zone" data-v="elbow"><rect x="${x-18}" y="${y-28}" width="36" height="56" rx="16" fill="${V.c}" opacity=".85"/>
    <text x="${x}" y="${y+40}" text-anchor="middle">${V.lb}</text></g>`;}
-  // 農業區斜排（官方綠色兩棟）＋ Nashville 斜棟
-  h+=rr("ag",38,16,-20);
+  h+=rr("ag",38,16,-20,false,true);
   h+=rr("wec",40,16,-20);
-  h+=rr("nash",34,13,-25);
+  h+=rr("nash",34,13,-25,true);
   h+=rr("kids",40,14);
-  // GMC Stadium — 斜向看台＋東側斜賽道（官方 Infield）
   {const V=VENUES.gmc,x=V.mx,y=V.my;
    h+=`<g class="zone" data-v="gmc">
      <g transform="rotate(-15 ${x+52} ${y+2})">
@@ -760,18 +765,77 @@ function renderMap(){
      <rect x="${x-8}" y="${y-24}" width="13" height="46" fill="${V.c}" opacity=".95" transform="rotate(-28 ${x} ${y})"/>
      <text x="${x+40}" y="${y+50}" text-anchor="middle">${V.lb}</text></g>`;}
   h+=rr("coke",34,16);
-  h+=rr("dog",32,12);
+  h+=rr("dog",32,12,0,true);
   h+=`<g id="friendpins"></g>
   <g id="gpspin" style="display:none">
     <circle class="pin-ring" r="14" fill="none" stroke="#1A1A1A" stroke-width="1.5"/>
     <circle r="5" fill="#1A1A1A" stroke="#FAF7F2" stroke-width="2"/>
   </g>`;
-  svg.innerHTML=h;
+  svg.innerHTML=`<g id="world">${h}</g>`;
   svg.querySelectorAll(".zone").forEach(g=>g.addEventListener("click",()=>{
+    if(svg._dragged){svg._dragged=false;return}
     activeVenue=(activeVenue===g.dataset.v)?"all":g.dataset.v;
     favOnly=false; renderChips(); render(); syncMap();
   }));
+  initMapZoom();
   syncMap();
+}
+
+/* ---------- 縮放／平移互動 ---------- */
+function initMapZoom(){
+  const svg=document.getElementById("mapsvg");
+  const world=document.getElementById("world");
+  if(!world)return;
+  let s=1,tx=0,ty=0;
+  const apply=()=>{
+    s=Math.min(4,Math.max(1,s));
+    tx=Math.min(0,Math.max(MAP.W*(1-s),tx));
+    ty=Math.min(0,Math.max(MAP.H*(1-s),ty));
+    world.setAttribute("transform",`translate(${tx.toFixed(1)} ${ty.toFixed(1)}) scale(${s.toFixed(3)})`);
+    svg.classList.toggle("zoomed",s>=1.5);
+  };
+  const toSvg=(cx,cy)=>{const r=svg.getBoundingClientRect();return[(cx-r.left)*MAP.W/r.width,(cy-r.top)*MAP.H/r.height]};
+  if(svg._zoomInit){apply();return}
+  svg._zoomInit=true; svg._dragged=false;
+  const pts=new Map(); let last=null,moved=0;
+  svg.addEventListener("pointerdown",e=>{
+    pts.set(e.pointerId,[e.clientX,e.clientY]);
+    try{svg.setPointerCapture(e.pointerId)}catch(_){}
+    last=null;moved=0;
+  });
+  svg.addEventListener("pointermove",e=>{
+    if(!pts.has(e.pointerId))return;
+    pts.set(e.pointerId,[e.clientX,e.clientY]);
+    const arr=[...pts.values()];
+    if(arr.length===1){
+      if(last&&!last.d){
+        const[px,py]=toSvg(last[0],last[1]),[qx,qy]=toSvg(arr[0][0],arr[0][1]);
+        tx+=qx-px;ty+=qy-py;moved+=Math.hypot(qx-px,qy-py);apply();
+      }
+      last=arr[0].slice();
+    }else if(arr.length===2){
+      const d=Math.hypot(arr[0][0]-arr[1][0],arr[0][1]-arr[1][1]);
+      const mid=[(arr[0][0]+arr[1][0])/2,(arr[0][1]+arr[1][1])/2];
+      if(last&&last.d){
+        const[mx,my]=toSvg(mid[0],mid[1]);
+        const px=(mx-tx)/s,py=(my-ty)/s;
+        s*=d/last.d;s=Math.min(4,Math.max(1,s));
+        tx=mx-px*s;ty=my-py*s;moved=99;apply();
+      }
+      last={d,mid};
+    }
+  });
+  const up=e=>{pts.delete(e.pointerId);last=null;if(moved>5)svg._dragged=true};
+  svg.addEventListener("pointerup",up);
+  svg.addEventListener("pointercancel",up);
+  svg.addEventListener("wheel",e=>{
+    e.preventDefault();
+    const[mx,my]=toSvg(e.clientX,e.clientY);
+    const px=(mx-tx)/s,py=(my-ty)/s;
+    s*=e.deltaY<0?1.15:0.87;s=Math.min(4,Math.max(1,s));
+    tx=mx-px*s;ty=my-py*s;apply();
+  },{passive:false});
+  svg.addEventListener("dblclick",()=>{s=1;tx=0;ty=0;apply()});
 }
 function syncMap(){
   document.querySelectorAll("#mapsvg .zone").forEach(g=>{
