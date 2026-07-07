@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Stampede · Tuesday, July 7</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FAF7F2; --ink:#1A1A1A; --sub:#6B6B6B; --line:#E5DFD5;
+  --card:#FFFFFF;
+  --now:#B3402A;
+  --r:10px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"Space Grotesk", system-ui, -apple-system, "PingFang TC", sans-serif;
+  min-height:100dvh; padding-bottom:64px;
+}
+button{font:inherit;border:none;background:none;cursor:pointer;color:inherit}
+input{font:inherit}
+
+/* ---------- header ---------- */
+header{
+  position:sticky; top:0; z-index:20;
+  background:rgba(250,247,242,.92); backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);
+  padding:14px 20px 0;
+}
+.hd-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.hd-title{font-size:15px;font-weight:600;letter-spacing:.04em}
+.hd-title span{color:var(--now)}
+.hd-clock{font-size:13px;color:var(--sub);font-variant-numeric:tabular-nums;white-space:nowrap}
+.hd-sub{font-size:11px;color:var(--sub);letter-spacing:.08em;text-transform:uppercase;margin-top:2px}
+
+.searchbar{margin:12px 0 10px;position:relative}
+.searchbar input{
+  width:100%;padding:10px 14px;border:1px solid var(--line);border-radius:999px;
+  background:var(--card);font-size:14px;color:var(--ink);outline:none;
+  transition:border-color .2s ease;
+}
+.searchbar input:focus{border-color:var(--ink)}
+.searchbar input::placeholder{color:#B0AAA0}
+.searchbar .clr{
+  position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  width:26px;height:26px;border-radius:50%;background:var(--line);
+  font-size:13px;line-height:26px;display:none;
+}
+.searchbar.has-q .clr{display:block}
+
+.chips{
+  display:flex;gap:8px;overflow-x:auto;padding:0 0 12px;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;
+}
+.chips::-webkit-scrollbar{display:none}
+.chip{
+  flex:0 0 auto;padding:7px 13px;border-radius:999px;font-size:12.5px;
+  border:1px solid var(--line);background:var(--card);color:var(--sub);
+  white-space:nowrap;transition:all .2s ease;display:flex;align-items:center;gap:6px;
+}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:var(--c,#999)}
+.chip.on{background:var(--ink);color:#FAF7F2;border-color:var(--ink)}
+.chip.on .dot{background:var(--c,#999)}
+
+/* ---------- sections ---------- */
+main{padding:0 20px;max-width:720px;margin:0 auto}
+.sec-label{
+  font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--sub);
+  margin:26px 0 10px;display:flex;align-items:center;gap:10px;
+}
+.sec-label::after{content:"";flex:1;height:1px;background:var(--line)}
+.sec-label.now-label{color:var(--now)}
+.sec-label.now-label::before{
+  content:"";width:8px;height:8px;border-radius:50%;background:var(--now);
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* ---------- event card ---------- */
+.ev{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  padding:13px 15px;margin-bottom:9px;
+  display:grid;grid-template-columns:58px 1fr;gap:14px;align-items:start;
+  border-left:3px solid var(--c,#CCC);
+  transition:transform .2s ease, box-shadow .2s ease;
+}
+@media(hover:hover){
+  .ev:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(26,26,26,.06)}
+}
+.ev-time{
+  font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.25;
+}
+.ev-time small{display:block;font-size:10px;font-weight:400;color:var(--sub);letter-spacing:.06em}
+.ev-name{font-size:14.5px;font-weight:500;line-height:1.4}
+.ev-venue{font-size:11.5px;color:var(--sub);margin-top:3px;letter-spacing:.03em;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ev-venue .dot{width:6px;height:6px;border-radius:50%;background:var(--c,#999);flex:0 0 auto}
+.badge{
+  display:inline-block;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  padding:2px 7px;border-radius:999px;font-weight:600;
+}
+.badge.tk{background:#8C2F1B;color:#FAF7F2}
+.badge.live{background:var(--now);color:#FAF7F2}
+.badge.soon{background:#EFE8DC;color:#8A6B3A}
+.badge.done{background:var(--line);color:var(--sub)}
+.ev.is-done{opacity:.45}
+.ev.is-live{border-color:var(--now);border-left-color:var(--now)}
+
+/* hour group */
+.hour-group{margin-bottom:4px}
+.hour-tag{
+  font-size:12px;font-weight:600;color:var(--sub);font-variant-numeric:tabular-nums;
+  margin:16px 0 8px;letter-spacing:.06em;
+}
+
+/* all-day */
+details.allday{margin-top:8px}
+details.allday summary{
+  list-style:none;font-size:12.5px;color:var(--sub);padding:11px 15px;
+  border:1px dashed var(--line);border-radius:var(--r);
+  display:flex;justify-content:space-between;align-items:center;
+}
+details.allday summary::-webkit-details-marker{display:none}
+details.allday summary .tw{transition:transform .2s ease;font-size:11px}
+details.allday[open] summary .tw{transform:rotate(90deg)}
+details.allday .ev{grid-template-columns:1fr}
+.ad-hours{font-size:11px;color:var(--sub);font-variant-numeric:tabular-nums}
+
+/* empty */
+.empty{
+  text-align:center;padding:56px 20px;color:var(--sub);font-size:13.5px;line-height:1.8;
+}
+.empty b{display:block;font-size:15px;color:var(--ink);font-weight:500;margin-bottom:4px}
+
+footer{
+  max-width:720px;margin:36px auto 0;padding:16px 20px 0;border-top:1px solid var(--line);
+  font-size:10.5px;color:var(--sub);line-height:1.8;letter-spacing:.03em;
+}
+
+/* ---------- map ---------- */
+.mapsec{max-width:720px;margin:16px auto 0;padding:0 20px}
+.map-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.map-title{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--sub)}
+.locate{
+  font-size:11.5px;letter-spacing:.06em;padding:6px 14px;border-radius:999px;
+  border:1px solid var(--ink);color:var(--ink);transition:all .2s ease;
+}
+.locate.on{background:var(--ink);color:#FAF7F2}
+.locate:disabled{opacity:.4}
+.mapbox{
+  border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#F3EEE6;
+}
+.mapbox svg{display:block;width:100%;height:auto}
+.zone{cursor:pointer;transition:opacity .2s ease}
+.zone rect{rx:3}
+.zone text{
+  font-family:"Space Grotesk",system-ui,sans-serif;font-size:7.5px;letter-spacing:.04em;
+  fill:#1A1A1A;pointer-events:none;
+}
+.zone.dim{opacity:.22}
+#gpspin{transition:transform .8s ease}
+.pin-ring{animation:ring 2.4s ease-out infinite;transform-origin:center}
+@keyframes ring{0%{opacity:.5;transform:scale(.4)}100%{opacity:0;transform:scale(1.8)}}
+.map-note{font-size:10.5px;color:var(--sub);margin-top:6px;line-height:1.6}
+.nearby{margin-top:12px;display:none}
+.nearby.show{display:block}
+.nb{
+  display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  padding:10px 2px;border-bottom:1px solid var(--line);font-size:13px;
+}
+.nb:last-child{border-bottom:none}
+.nb-l{display:flex;align-items:center;gap:8px;min-width:0}
+.nb-l .dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+.nb-v{font-weight:500;white-space:nowrap}
+.nb-e{color:var(--sub);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nb-d{font-size:11.5px;color:var(--sub);font-variant-numeric:tabular-nums;white-space:nowrap}
+.nb-d .live-t{color:var(--now);font-weight:600}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hd-top">
+    <div class="hd-title">TUESDAY, JULY <span>7</span></div>
+    <div class="hd-clock" id="clock">--:--</div>
+  </div>
+  <div class="hd-sub">Calgary Stampede · Park open 10 a.m. – midnight</div>
+  <div class="searchbar" id="sb">
+    <input id="q" type="search" placeholder="搜尋：馬術、摩托車、狗、deadmau5⋯" autocomplete="off">
+    <button class="clr" id="clr" aria-label="清除">✕</button>
+  </div>
+  <div class="chips" id="chips"></div>
+</header>
+
+<section class="mapsec">
+  <div class="map-head">
+    <div class="map-title">Park Map · 點色塊篩選</div>
+    <button class="locate" id="locBtn">定位</button>
+  </div>
+  <div class="mapbox"><svg id="mapsvg" viewBox="0 0 360 300" role="img" aria-label="園區示意地圖"></svg></div>
+  <div class="map-note" id="mapNote">場域位置為示意配置（非精準比例）。按「定位」後以你的 GPS 顯示附近活動。</div>
+  <div class="nearby" id="nearby"></div>
+</section>
+
+<main id="main"></main>
+
+<footer>
+  資料轉錄自 7/7 園區紙本節目表，細小字體可能有誤——以官方 App 為準。<br>
+  時間依你的裝置時鐘自動判斷「進行中／即將開始」。
+</footer>
+
+<script>
+/* ================= DATA ================= */
+/* t = 開始時間（分鐘，凌晨跨日 >1440）；tk = ticketed */
+const VENUES = {
+  gmc:   {name:"GMC Stadium",              c:"#8C2F1B", lat:51.0338, lng:-114.0518, w:56, h:30, lb:"GMC STADIUM · INFIELD"},
+  wec:   {name:"Nutrien Western Event Ctr",c:"#5A7A4A", lat:51.0352, lng:-114.0520, w:52, h:22, lb:"NUTRIEN WEC"},
+  ag:    {name:"Agriculture Zone",         c:"#8FA878", lat:51.0361, lng:-114.0506, w:46, h:20, lb:"AG ZONE"},
+  dome:  {name:"Scotiabank Saddledome",    c:"#6E6E74", lat:51.0382, lng:-114.0530, w:52, h:34, lb:"SADDLEDOME"},
+  nash:  {name:"Nashville North",          c:"#A98B5F", lat:51.0344, lng:-114.0546, w:46, h:18, lb:"NASHVILLE N"},
+  big4:  {name:"Big Four Roadhouse",       c:"#4E8C7E", lat:51.0378, lng:-114.0576, w:44, h:20, lb:"BIG FOUR"},
+  coke:  {name:"Coca-Cola Stage",          c:"#C2543B", lat:51.0331, lng:-114.0570, w:40, h:20, lb:"COCA-COLA"},
+  oasis: {name:"Western Oasis",            c:"#4A6FA0", lat:51.0401, lng:-114.0603, w:34, h:14, lb:"OASIS"},
+  taste: {name:"Taste of Stampede",        c:"#3E618F", lat:51.0402, lng:-114.0578, w:34, h:14, lb:"TASTE"},
+  bmo:   {name:"BMO Centre / Market",      c:"#35547E", lat:51.0391, lng:-114.0592, w:56, h:28, lb:"BMO CENTRE"},
+  plaza: {name:"BMO Plaza / Staircase",    c:"#5E82AE", lat:51.0384, lng:-114.0568, w:32, h:13, lb:"PLAZA"},
+  elbow: {name:"Elbow River Camp",         c:"#C77B3A", lat:51.0394, lng:-114.0478, w:48, h:24, lb:"ELBOW RIVER CAMP"},
+  comp:  {name:"The Compound",             c:"#3C4A48", lat:51.0403, lng:-114.0516, w:42, h:18, lb:"COMPOUND"},
+  dog:   {name:"Dog Bowl",                 c:"#4A6A50", lat:51.0326, lng:-114.0546, w:36, h:16, lb:"DOG BOWL"},
+  kids:  {name:"Kids' Midway",             c:"#C9A63C", lat:51.0403, lng:-114.0546, w:44, h:18, lb:"KIDS' MIDWAY"},
+};
+const m=(h,mi=0)=>h*60+mi;
+const EV=[
+ // GMC Stadium
+ {n:"Stampede Rodeo",v:"gmc",t:m(13,30),tk:1},
+ {n:"Evening Show",v:"gmc",t:m(19,15),tk:1},
+ // Nutrien WEC / Northern Lights Arena
+ {n:"Draft Horse Demo",v:"wec",t:m(10,15)},
+ {n:"World Stock Dog Championship",v:"wec",t:m(10,15)},
+ {n:"Horse Haven Equine Showcases",v:"wec",t:m(11,15)},
+ {n:"Stampede Showriders",v:"wec",t:m(12,30)},
+ {n:"Draft Horse Demo",v:"wec",t:m(13,15)},
+ {n:"Horse Haven Equine Showcases",v:"wec",t:m(14,15)},
+ {n:"Draft Horse Demo",v:"wec",t:m(15,30)},
+ {n:"Stampede Showriders",v:"wec",t:m(16,0)},
+ {n:"Horse Haven Equine Showcases",v:"wec",t:m(16,30)},
+ {n:"The Charms",v:"wec",t:m(16,30)},
+ {n:"Reining Showcase",v:"wec",t:m(18,30)},
+ {n:"Reining Showcase",v:"wec",t:m(19,0)},
+ // Agriculture Zone — all day
+ {n:"Agriculture Showcases",v:"ag",ad:"10 a.m. – 9 p.m."},
+ {n:"Nutrien Ag-tivity in the City",v:"ag",ad:"10 a.m. – 9 p.m."},
+ {n:"Cattle Trail",v:"ag",ad:"10 a.m. – 9 p.m."},
+ {n:"Born to Buck™",v:"ag",ad:"10 a.m. – 9 p.m."},
+ {n:"Sheep & Pork Showcases",v:"ag",ad:"10 a.m. – 9 p.m."},
+ {n:"Country Critters · Milky Way Dairy Demos (Ag Barn)",v:"ag",ad:"10 a.m. – 9 p.m."},
+ {n:"Horse Haven (Ag Barn)",v:"ag",ad:"10 a.m. – 9 p.m."},
+ {n:"Draft Horse Town · Blacksmiths · Farm Equipment",v:"ag",ad:"10 a.m. – 9 p.m."},
+ // Saddledome
+ {n:"Calgary Stampede Powwow",v:"dome",t:m(12,30)},
+ // Nashville North
+ {n:"Devin Cooper",v:"nash",t:m(16,0)},
+ {n:"Devin Cooper",v:"nash",t:m(17,0)},
+ {n:"Morgan Klaiber",v:"nash",t:m(18,0)},
+ {n:"Morgan Klaiber",v:"nash",t:m(19,0)},
+ {n:"Zach McPhee",v:"nash",t:m(20,45)},
+ {n:"ERNEST",v:"nash",t:m(22,15)},
+ {n:"Foxx Worthee",v:"nash",t:m(24,15)},
+ {n:"Foxx Worthee",v:"nash",t:m(25,15)},
+ // Big Four Roadhouse
+ {n:"The Range Food Hall & 8-Bit Roundup Arcade",v:"big4",ad:"11 a.m. – 11 p.m."},
+ {n:"Battle of the Bulls",v:"big4",ad:"12 p.m. – 1 a.m."},
+ {n:"Bar Nineteen Twelve",v:"big4",ad:"5 – 10 p.m."},
+ {n:"Kate & The Comets",v:"big4",t:m(16,0)},
+ {n:"Kate & The Comets",v:"big4",t:m(17,15)},
+ {n:"Kate & The Comets",v:"big4",t:m(18,30)},
+ {n:"The Marshall Tucker Band",v:"big4",t:m(21,0)},
+ // Coca-Cola Stage
+ {n:"Gatano",v:"coke",t:m(20,0)},
+ {n:"deadmau5",v:"coke",t:m(21,30)},
+ // Western Oasis
+ {n:"Live Sand Sculpting",v:"oasis",ad:"11 a.m. – 10 p.m."},
+ {n:"WOW Stage: Harmonica Tableau",v:"oasis",t:m(12,0)},
+ {n:"WOW Stage: Karen Mills",v:"oasis",t:m(13,0)},
+ {n:"WOW Stage: Sandra Sutter & Rust",v:"oasis",t:m(14,0)},
+ {n:"WOW Stage: Stampede City Mixed Chorus",v:"oasis",t:m(15,0)},
+ {n:"WOW Stage: Pure Country",v:"oasis",t:m(16,0)},
+ {n:"WOW Stage: Charlie Ewing & Mike Dygert",v:"oasis",t:m(17,0)},
+ {n:"WOW Stage: Buddy Elliott",v:"oasis",t:m(18,0)},
+ // Taste of Stampede
+ {n:"Cooking Demo: Safeway",v:"taste",t:m(11,0)},
+ {n:"International Cuisine Demo: Roy Oh（Roy's Korean Kitchen）",v:"taste",t:m(12,0)},
+ {n:"Culinary Cup — Calgary Chefs",v:"taste",t:m(13,15)},
+ {n:"Specialty Chef Demonstration",v:"taste",t:m(15,15)},
+ {n:"International Cooking Demo: Nepalese Cuisine",v:"taste",t:m(17,15)},
+ {n:"Taste of Stampede",v:"taste",t:m(19,0),tk:1},
+ // BMO Centre / Market / Stage of Wonders
+ {n:"Market Vendors · BMO Community Square",v:"bmo",ad:"12 – 9 p.m."},
+ {n:"GlobalFest Performance",v:"bmo",t:m(12,0)},
+ {n:"Community Stage: Calgary Public Library",v:"bmo",t:m(12,30)},
+ {n:"On Air!（Stage of Wonders）",v:"bmo",t:m(12,30)},
+ {n:"Midway Melodies Karaoke",v:"bmo",t:m(13,0)},
+ {n:"GlobalFest Performance",v:"bmo",t:m(14,0)},
+ {n:"On Air!（Stage of Wonders）",v:"bmo",t:m(14,15)},
+ {n:"Calgary Public Library",v:"bmo",t:m(14,30)},
+ {n:"Showband Clarinet Ensemble",v:"bmo",t:m(15,0)},
+ {n:"Line Dancing Lesson",v:"bmo",t:m(15,15)},
+ {n:"GlobalFest Performance",v:"bmo",t:m(16,45)},
+ {n:"On Air!（Stage of Wonders）",v:"bmo",t:m(16,45)},
+ {n:"Midway Melodies Karaoke",v:"bmo",t:m(17,15)},
+ {n:"Line Dancing Lesson",v:"bmo",t:m(17,45)},
+ {n:"GlobalFest Performance",v:"bmo",t:m(18,15)},
+ {n:"On Air!（Stage of Wonders）",v:"bmo",t:m(18,30)},
+ {n:"Midway Melodies Karaoke",v:"bmo",t:m(18,45)},
+ {n:"GlobalFest Performance",v:"bmo",t:m(19,30)},
+ {n:"Midway Melodies Karaoke",v:"bmo",t:m(20,0)},
+ // BMO Plaza / Grand Staircase
+ {n:"Guest Band Performance",v:"plaza",t:m(10,45)},
+ {n:"High Dive Show",v:"plaza",t:m(13,0)},
+ {n:"Acoustic Act: Danny Nix",v:"plaza",t:m(13,45)},
+ {n:"Stampede Showband",v:"plaza",t:m(14,0)},
+ {n:"High Dive Show",v:"plaza",t:m(14,20)},
+ {n:"Acoustic Act: Danny Nix",v:"plaza",t:m(15,0)},
+ {n:"Guest Band Performance",v:"plaza",t:m(15,50)},
+ {n:"Acoustic Act: Danny Nix",v:"plaza",t:m(16,15)},
+ {n:"High Dive Show",v:"plaza",t:m(16,30)},
+ {n:"Dueling Pianos",v:"plaza",t:m(17,30)},
+ {n:"The Grand Staircase Show feat. Stampede Showband",v:"plaza",t:m(18,0)},
+ {n:"Dueling Pianos",v:"plaza",t:m(19,15)},
+ {n:"Band of Outriders",v:"plaza",t:m(19,45)},
+ {n:"The Grand Staircase Show feat. Stampede Showband",v:"plaza",t:m(20,30)},
+ {n:"Dueling Pianos",v:"plaza",t:m(21,0)},
+ // Elbow River Camp
+ {n:"Tipi Viewing",v:"elbow",ad:"11 a.m. – 7 p.m."},
+ {n:"Interpretive Programs · Vendors · Bannock Booth · Council Tipi",v:"elbow",ad:"11 a.m. – 9 p.m."},
+ {n:"Flag Raising",v:"elbow",t:m(11,30)},
+ {n:"Camp Riders",v:"elbow",t:m(11,45)},
+ {n:"Horse Culture",v:"elbow",t:m(12,30)},
+ {n:"Traditional Games",v:"elbow",t:m(13,0)},
+ {n:"Interpretive Tour",v:"elbow",t:m(14,0)},
+ {n:"Piikani / Kainai Nation Day",v:"elbow",t:m(15,0)},
+ {n:"Interpretive Tour",v:"elbow",t:m(17,0)},
+ {n:"Sharing Our Culture",v:"elbow",t:m(18,0)},
+ {n:"Flag Lowering",v:"elbow",t:m(19,0)},
+ // Compound
+ {n:"Freestyle Motocross",v:"comp",t:m(12,0)},
+ {n:"Freestyle Motocross",v:"comp",t:m(14,30)},
+ {n:"Freestyle Motocross",v:"comp",t:m(17,0)},
+ {n:"Freestyle Motocross",v:"comp",t:m(19,0)},
+ // Dog Bowl
+ {n:"Full Throttle",v:"dog",t:m(10,30)},
+ {n:"Full Throttle",v:"dog",t:m(12,30)},
+ {n:"Full Throttle",v:"dog",t:m(15,0)},
+ {n:"Full Throttle",v:"dog",t:m(17,30)},
+ {n:"Full Throttle",v:"dog",t:m(19,30)},
+ // Kids' Midway
+ {n:"Canadian Armed Forces Displays",v:"kids",ad:"11 a.m. – 10 p.m."},
+ {n:"PAW Patrol: Dino Rescue!",v:"kids",t:m(11,15)},
+ {n:"Little Rodeo Pro",v:"kids",t:m(12,0)},
+ {n:"PAW Patrol Meet & Greet",v:"kids",t:m(12,10)},
+ {n:"Team T&J: Kids' Dino Stompin' Jamboree",v:"kids",t:m(12,30)},
+ {n:"Bubble Playshop",v:"kids",t:m(13,30)},
+ {n:"Little Rodeo Pro",v:"kids",t:m(13,30)},
+ {n:"Gabby's Dollhouse Dance Party",v:"kids",t:m(14,0)},
+ {n:"Little Rodeo Pro",v:"kids",t:m(15,0)},
+ {n:"Gabby's Dollhouse Meet & Greet",v:"kids",t:m(15,20)},
+ {n:"PAW Patrol: Dino Rescue!",v:"kids",t:m(16,0)},
+ {n:"PAW Patrol Meet & Greet",v:"kids",t:m(17,0)},
+ {n:"Bubble Playshop",v:"kids",t:m(17,20)},
+ {n:"Gabby's Dollhouse Dance Party",v:"kids",t:m(18,0)},
+ {n:"Team T&J: Kids' Dino Stompin' Jamboree",v:"kids",t:m(19,0)},
+];
+
+/* ============ 中文模糊標籤 ============ */
+/* 依場地給基礎標籤，再依活動名稱疊加關鍵字 */
+const VZH={
+  gmc:"牛仔競技 圈地賽 晚間秀 主場館",
+  wec:"馬術 馬 西部 牧羊犬 表演",
+  ag:"農業 動物 農場 牛 羊 豬 鐵匠 親子",
+  dome:"原住民 帕瓦 舞蹈 冰球館",
+  nash:"音樂 現場演出 鄉村 酒吧 夜店",
+  big4:"音樂 酒吧 美食 遊戲機 機械牛",
+  coke:"音樂 演唱會 主舞台 電音",
+  oasis:"藝術 沙雕 音樂 酒 展覽",
+  taste:"美食 烹飪 料理 廚師 試吃",
+  bmo:"市集 卡拉OK 排舞 表演 購物",
+  plaza:"跳水 樂隊 鋼琴 音樂 表演",
+  elbow:"原住民 帳篷 文化 導覽 傳統",
+  comp:"摩托車 越野 特技 極限運動",
+  dog:"狗 犬 寵物 特技 表演",
+  kids:"兒童 親子",
+};
+const NZH=[
+ [/rodeo/i,"牛仔競技 圈地賽"],
+ [/horse|equine|reining|showriders/i,"馬術 馬"],
+ [/stock dog/i,"牧羊犬 狗 犬"],
+ [/motocross/i,"摩托車 越野 特技"],
+ [/full throttle/i,"狗 犬 敏捷 飛盤"],
+ [/powwow/i,"原住民 帕瓦 舞蹈"],
+ [/dive/i,"跳水 高空"],
+ [/piano/i,"鋼琴 音樂"],
+ [/karaoke/i,"卡拉OK 唱歌"],
+ [/line dancing/i,"排舞 跳舞 教學"],
+ [/cooking|cuisine|chef|culinary/i,"烹飪 料理 美食 廚師"],
+ [/sand sculpt/i,"沙雕 藝術"],
+ [/paw patrol/i,"汪汪隊 卡通 兒童"],
+ [/gabby/i,"蓋比 娃娃屋 卡通"],
+ [/dino/i,"恐龍 兒童"],
+ [/bubble/i,"泡泡 兒童"],
+ [/tipi|flag|interpretive|culture|kainai|piikani|camp riders|traditional/i,"原住民 文化 傳統"],
+ [/showband|band|acoustic|chorus|wow stage|comets|marshall|deadmau5|gatano|ernest|mcphee|klaiber|cooper|worthee|charms/i,"音樂 現場演出"],
+ [/deadmau5/i,"電音 DJ"],
+ [/armed forces/i,"軍事 展示"],
+ [/battle of the bulls/i,"機械牛 挑戰"],
+ [/market|vendors/i,"市集 購物"],
+];
+for(const e of EV){
+  let z=VZH[e.v]||"";
+  for(const[re,t]of NZH) if(re.test(e.n)) z+=" "+t;
+  e.zh=z;
+}
+
+/* ================= STATE ================= */
+let activeVenue="all", query="";
+const LIVE_WINDOW=45;   // 開始後 45 分鐘內視為進行中
+const SOON_WINDOW=60;   // 60 分鐘內開始視為即將開始
+
+/* ================= HELPERS ================= */
+function nowMin(){
+  const d=new Date();
+  let mm=d.getHours()*60+d.getMinutes();
+  if(d.getHours()<4) mm+=1440; // 凌晨視為前一天深夜
+  return mm;
+}
+function fmt(t){
+  const h24=Math.floor(t/60)%24, mi=t%60;
+  const ap=(t>=720&&t<1440)?"PM":(t>=1440?"AM":"AM");
+  let h=h24%12; if(h===0)h=12;
+  return {h:`${h}:${String(mi).padStart(2,"0")}`, ap:(t>=1440?"翌日 AM":ap)};
+}
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;")}
+
+/* ================= RENDER ================= */
+function evCard(e,status){
+  const V=VENUES[e.v];
+  const f=e.ad?null:fmt(e.t);
+  let badge="";
+  if(e.tk) badge+=`<span class="badge tk">Ticketed</span>`;
+  if(status==="live") badge+=`<span class="badge live">進行中</span>`;
+  else if(status==="soon") badge+=`<span class="badge soon">即將開始</span>`;
+  const cls=`ev${status==="done"?" is-done":""}${status==="live"?" is-live":""}`;
+  const timeCol=e.ad
+    ? `<div class="ev-time" style="font-size:12px;font-weight:500">ALL<br>DAY</div>`
+    : `<div class="ev-time">${f.h}<small>${f.ap}</small></div>`;
+  return `<div class="${cls}" style="--c:${V.c}">
+    ${timeCol}
+    <div>
+      <div class="ev-name">${esc(e.n)}</div>
+      <div class="ev-venue"><span class="dot"></span>${esc(V.name)}${e.ad?` <span class="ad-hours">· ${e.ad}</span>`:""} ${badge}</div>
+    </div>
+  </div>`;
+}
+
+function statusOf(e,now){
+  if(e.ad) return "ad";
+  if(now>=e.t && now<e.t+LIVE_WINDOW) return "live";
+  if(e.t>now && e.t<=now+SOON_WINDOW) return "soon";
+  if(e.t+LIVE_WINDOW<=now) return "done";
+  return "later";
+}
+
+function render(){
+  const now=nowMin();
+  const tokens=query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const match=e=>{
+    if(activeVenue!=="all"&&e.v!==activeVenue)return false;
+    if(tokens.length){
+      const hay=(e.n+" "+VENUES[e.v].name+" "+e.zh).toLowerCase();
+      // 每個詞都需命中（AND），中英混搜皆可
+      for(const t of tokens) if(!hay.includes(t)) return false;
+    }
+    return true;
+  };
+  const timed=EV.filter(e=>!e.ad&&match(e)).sort((a,b)=>a.t-b.t);
+  const alldays=EV.filter(e=>e.ad&&match(e));
+
+  const live=timed.filter(e=>statusOf(e,now)==="live");
+  const soon=timed.filter(e=>statusOf(e,now)==="soon");
+  const rest=timed.filter(e=>{const s=statusOf(e,now);return s!=="live"&&s!=="soon"});
+
+  let html="";
+  if(live.length){
+    html+=`<div class="sec-label now-label">現在進行中</div>`;
+    html+=live.map(e=>evCard(e,"live")).join("");
+  }
+  if(soon.length){
+    html+=`<div class="sec-label">60 分鐘內開始</div>`;
+    html+=soon.map(e=>evCard(e,"soon")).join("");
+  }
+  if(rest.length){
+    html+=`<div class="sec-label">全日時間表</div>`;
+    let lastHour=-1;
+    for(const e of rest){
+      const h=Math.floor(e.t/60);
+      if(h!==lastHour){
+        lastHour=h;
+        const f=fmt(h*60);
+        html+=`<div class="hour-tag">${f.h.split(":")[0]} ${f.ap}</div>`;
+      }
+      html+=evCard(e,statusOf(e,now));
+    }
+  }
+  if(alldays.length){
+    html+=`<details class="allday"${(q||activeVenue!=="all")?" open":""}>
+      <summary>全天開放（${alldays.length}）<span class="tw">▸</span></summary>
+      <div style="margin-top:9px">${alldays.map(e=>evCard(e,"ad")).join("")}</div>
+    </details>`;
+  }
+  if(!html){
+    html=`<div class="empty"><b>沒有符合的活動</b>換個關鍵字，或把場地篩選切回「全部」。</div>`;
+  }
+  document.getElementById("main").innerHTML=html;
+}
+
+/* ================= CHIPS ================= */
+function renderChips(){
+  const el=document.getElementById("chips");
+  let h=`<button class="chip${activeVenue==="all"?" on":""}" data-v="all">全部</button>`;
+  for(const[k,V]of Object.entries(VENUES)){
+    h+=`<button class="chip${activeVenue===k?" on":""}" data-v="${k}" style="--c:${V.c}"><span class="dot"></span>${esc(V.name)}</button>`;
+  }
+  el.innerHTML=h;
+  el.querySelectorAll(".chip").forEach(b=>b.addEventListener("click",()=>{
+    activeVenue=b.dataset.v; renderChips(); render();
+    if(document.querySelector("#mapsvg .zone")) syncMap();
+  }));
+}
+
+/* ================= MAP ================= */
+const MAP={W:360,H:300,pad:26,
+  latMax:51.0424,latMin:51.0320,lngMin:-114.0618,lngMax:-114.0462};
+function proj(lat,lng){
+  const x=MAP.pad+(lng-MAP.lngMin)/(MAP.lngMax-MAP.lngMin)*(MAP.W-MAP.pad*2);
+  const y=MAP.pad+(MAP.latMax-lat)/(MAP.latMax-MAP.latMin)*(MAP.H-MAP.pad*2);
+  return [x,y];
+}
+const GATES=[
+  {lat:51.0419,lng:-114.0556,lb:"STAMPEDE TRAIL 入口"},
+  {lat:51.0398,lng:-114.0614,lb:"VICTORIA PARK 入口"},
+  {lat:51.0322,lng:-114.0530,lb:"ERLTON 入口"},
+  {lat:51.0412,lng:-114.0468,lb:"MacDONALD 入口"},
+];
+function renderMap(){
+  const svg=document.getElementById("mapsvg");
+  let h=`<rect x="0" y="0" width="${MAP.W}" height="${MAP.H}" fill="#F3EEE6"/>
+  <path d="M ${MAP.W-8} 30 Q ${MAP.W-30} 160 ${MAP.W-90} ${MAP.H-30} Q ${MAP.W-140} ${MAP.H-6} ${MAP.W-210} ${MAP.H-4}" stroke="#D9E3E6" stroke-width="12" fill="none" opacity=".9"/>
+  <text x="${MAP.W-56}" y="${MAP.H-34}" font-size="7" fill="#9AAAB0" font-family="Space Grotesk" letter-spacing=".08em">ELBOW R.</text>`;
+  for(const g of GATES){
+    const[x,y]=proj(g.lat,g.lng);
+    h+=`<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" font-size="7" fill="#6B6B6B" font-family="Space Grotesk" letter-spacing=".06em">${g.lb}</text>`;
+  }
+  for(const[k,V]of Object.entries(VENUES)){
+    const[x,y]=proj(V.lat,V.lng);
+    h+=`<g class="zone" data-v="${k}">
+      <rect x="${(x-V.w/2).toFixed(1)}" y="${(y-V.h/2).toFixed(1)}" width="${V.w}" height="${V.h}" fill="${V.c}" opacity=".85"/>
+      <text x="${x.toFixed(1)}" y="${(y+V.h/2+9).toFixed(1)}" text-anchor="middle">${V.lb}</text>
+    </g>`;
+  }
+  h+=`<g id="gpspin" style="display:none">
+    <circle class="pin-ring" r="14" fill="none" stroke="#1A1A1A" stroke-width="1.5"/>
+    <circle r="5" fill="#1A1A1A" stroke="#FAF7F2" stroke-width="2"/>
+  </g>`;
+  svg.innerHTML=h;
+  svg.querySelectorAll(".zone").forEach(g=>g.addEventListener("click",()=>{
+    activeVenue=(activeVenue===g.dataset.v)?"all":g.dataset.v;
+    renderChips(); render(); syncMap();
+  }));
+  syncMap();
+}
+function syncMap(){
+  document.querySelectorAll("#mapsvg .zone").forEach(g=>{
+    g.classList.toggle("dim", activeVenue!=="all"&&g.dataset.v!==activeVenue);
+  });
+}
+
+/* ================= GPS ================= */
+let watchId=null, userPos=null;
+const R=6371000, rad=d=>d*Math.PI/180;
+function distM(a,b,c,d){
+  const dLat=rad(c-a), dLng=rad(d-b);
+  const s=Math.sin(dLat/2)**2+Math.cos(rad(a))*Math.cos(rad(c))*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(s));
+}
+function onPos(p){
+  userPos={lat:p.coords.latitude,lng:p.coords.longitude};
+  const pin=document.getElementById("gpspin");
+  const note=document.getElementById("mapNote");
+  const inPark=userPos.lat>MAP.latMin&&userPos.lat<MAP.latMax&&userPos.lng>MAP.lngMin&&userPos.lng<MAP.lngMax;
+  if(inPark){
+    const[x,y]=proj(userPos.lat,userPos.lng);
+    pin.style.display="";
+    pin.setAttribute("transform",`translate(${x.toFixed(1)},${y.toFixed(1)})`);
+    note.textContent="附近活動依你的位置即時排序（場域座標為近似值，誤差約數十公尺）。";
+  }else{
+    pin.style.display="none";
+    note.textContent="你目前在園區範圍外——已依直線距離列出最近的場域。";
+  }
+  renderNearby();
+}
+function onPosErr(err){
+  document.getElementById("mapNote").textContent="無法取得定位（"+(err.code===1?"權限被拒":"訊號不佳")+"）。可直接點色塊瀏覽各場域。";
+  stopWatch();
+}
+function startWatch(){
+  if(!("geolocation" in navigator)){onPosErr({code:0});return}
+  const btn=document.getElementById("locBtn");
+  btn.classList.add("on"); btn.textContent="定位中";
+  watchId=navigator.geolocation.watchPosition(onPos,onPosErr,{enableHighAccuracy:true,maximumAge:15000,timeout:12000});
+}
+function stopWatch(){
+  if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null}
+  userPos=null;
+  const btn=document.getElementById("locBtn");
+  btn.classList.remove("on"); btn.textContent="定位";
+  document.getElementById("gpspin").style.display="none";
+  document.getElementById("nearby").classList.remove("show");
+}
+document.getElementById("locBtn").addEventListener("click",()=>{
+  watchId===null?startWatch():stopWatch();
+});
+
+function venueStatusLine(k,now){
+  const evs=EV.filter(e=>e.v===k&&!e.ad).sort((a,b)=>a.t-b.t);
+  const live=evs.find(e=>now>=e.t&&now<e.t+LIVE_WINDOW);
+  if(live) return {txt:live.n,tag:"live"};
+  const next=evs.find(e=>e.t>now);
+  if(next){const f=fmt(next.t);return {txt:`${f.h} ${f.ap} · ${next.n}`,tag:"next"}}
+  const ad=EV.find(e=>e.v===k&&e.ad);
+  if(ad) return {txt:`全天 · ${ad.n}`,tag:"ad"};
+  return {txt:"今日場次已結束",tag:"done"};
+}
+function renderNearby(){
+  if(!userPos)return;
+  const now=nowMin();
+  const box=document.getElementById("nearby");
+  const list=Object.entries(VENUES)
+    .map(([k,V])=>({k,V,d:distM(userPos.lat,userPos.lng,V.lat,V.lng)}))
+    .sort((a,b)=>a.d-b.d).slice(0,4);
+  box.innerHTML=list.map(({k,V,d})=>{
+    const s=venueStatusLine(k,now);
+    const dTxt=d<950?`${Math.round(d/10)*10} m`:`${(d/1000).toFixed(1)} km`;
+    return `<div class="nb">
+      <div class="nb-l"><span class="dot" style="background:${V.c}"></span>
+        <span class="nb-v">${esc(V.name)}</span>
+        <span class="nb-e">${s.tag==="live"?"▸ ":""}${esc(s.txt)}</span></div>
+      <div class="nb-d">${s.tag==="live"?`<span class="live-t">LIVE</span> · `:""}${dTxt}</div>
+    </div>`;
+  }).join("");
+  box.classList.add("show");
+}
+
+/* ================= CLOCK ================= */
+function tickClock(){
+  const d=new Date();
+  document.getElementById("clock").textContent=
+    d.toLocaleTimeString("en-CA",{hour:"numeric",minute:"2-digit",hour12:true});
+}
+
+/* ================= INIT ================= */
+const qEl=document.getElementById("q"), sb=document.getElementById("sb");
+qEl.addEventListener("input",()=>{query=qEl.value;sb.classList.toggle("has-q",!!query);render()});
+document.getElementById("clr").addEventListener("click",()=>{qEl.value="";query="";sb.classList.remove("has-q");render();qEl.focus()});
+renderChips(); render(); renderMap(); tickClock();
+setInterval(()=>{tickClock();render();renderNearby()},30000); // 每 30 秒重算狀態
+</script>
+</body>
+</html>
