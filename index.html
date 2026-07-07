@@ -640,20 +640,57 @@ const GATES=[
 ];
 function renderMap(){
   const svg=document.getElementById("mapsvg");
-  let h=`<rect x="0" y="0" width="${MAP.W}" height="${MAP.H}" fill="#F3EEE6"/>
-  <path d="M ${MAP.W-8} 30 Q ${MAP.W-30} 160 ${MAP.W-90} ${MAP.H-30} Q ${MAP.W-140} ${MAP.H-6} ${MAP.W-210} ${MAP.H-4}" stroke="#D9E3E6" stroke-width="12" fill="none" opacity=".9"/>
-  <text x="${MAP.W-56}" y="${MAP.H-34}" font-size="7" fill="#9AAAB0" font-family="Space Grotesk" letter-spacing=".08em">ELBOW R.</text>`;
+  const C={}; for(const[k,V]of Object.entries(VENUES)) C[k]=proj(V.lat,V.lng);
+  const rr=(k,w,h,rot=0,shape="")=>{
+    const V=VENUES[k],[x,y]=C[k];
+    const body=shape||`<rect x="${(x-w/2).toFixed(1)}" y="${(y-h/2).toFixed(1)}" width="${w}" height="${h}" fill="${V.c}" opacity=".85"${rot?` transform="rotate(${rot} ${x.toFixed(1)} ${y.toFixed(1)})"`:""}/>`;
+    return `<g class="zone" data-v="${k}">${body}
+      <text x="${x.toFixed(1)}" y="${(y+h/2+10).toFixed(1)}" text-anchor="middle">${V.lb}</text></g>`;
+  };
+  let h=`<rect width="${MAP.W}" height="${MAP.H}" fill="#F3EEE6"/>
+  <!-- 街道 -->
+  <line x1="14" y1="10" x2="14" y2="${MAP.H-10}" stroke="#E5DFD5" stroke-width="3"/>
+  <line x1="10" y1="16" x2="${MAP.W-60}" y2="16" stroke="#E5DFD5" stroke-width="3"/>
+  <path d="M 150 16 L 186 ${MAP.H-16}" stroke="#E5DFD5" stroke-width="3" fill="none"/>
+  <!-- Elbow River -->
+  <path d="M 348 6 C 352 70 344 130 322 176 C 298 226 240 262 176 288" stroke="#D9E3E6" stroke-width="11" fill="none"/>
+  <text x="330" y="196" font-size="7" fill="#9AAAB0" font-family="Space Grotesk" letter-spacing=".08em">ELBOW R.</text>
+  <!-- Midway 走廊（裝飾） -->
+  <path d="M 128 128 L 158 128 L 178 250 L 146 258 Z" fill="#E3D3DC" opacity=".55"/>`;
   for(const g of GATES){
     const[x,y]=proj(g.lat,g.lng);
     h+=`<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" font-size="7" fill="#6B6B6B" font-family="Space Grotesk" letter-spacing=".06em">${g.lb}</text>`;
   }
-  for(const[k,V]of Object.entries(VENUES)){
-    const[x,y]=proj(V.lat,V.lng);
-    h+=`<g class="zone" data-v="${k}">
-      <rect x="${(x-V.w/2).toFixed(1)}" y="${(y-V.h/2).toFixed(1)}" width="${V.w}" height="${V.h}" fill="${V.c}" opacity=".85"/>
-      <text x="${x.toFixed(1)}" y="${(y+V.h/2+9).toFixed(1)}" text-anchor="middle">${V.lb}</text>
-    </g>`;
-  }
+  // BMO Centre — L 型建築群
+  {const V=VENUES.bmo,[x,y]=C.bmo;
+   h+=`<g class="zone" data-v="bmo"><path d="M ${x-36} ${y-34} L ${x+40} ${y-34} L ${x+40} ${y-6} L ${x+16} ${y-6} L ${x+16} ${y+28} L ${x-36} ${y+28} Z" fill="${V.c}" opacity=".85"/>
+   <text x="${x-8}" y="${y+40}" text-anchor="middle">${V.lb}</text></g>`;}
+  h+=rr("oasis",30,13);
+  h+=rr("taste",30,13);
+  h+=rr("plaza",30,12);
+  h+=rr("big4",42,20);
+  // Saddledome — 圓形
+  {const V=VENUES.dome,[x,y]=C.dome;
+   h+=`<g class="zone" data-v="dome"><circle cx="${x}" cy="${y}" r="21" fill="${V.c}" opacity=".9"/>
+   <text x="${x}" y="${y+33}" text-anchor="middle">${V.lb}</text></g>`;}
+  h+=rr("comp",42,16);
+  h+=rr("kids",44,16);
+  h+=rr("elbow",44,24,0,
+    `<rect x="${C.elbow[0]-22}" y="${C.elbow[1]-12}" width="44" height="24" fill="${VENUES.elbow.c}" opacity=".85" rx="10"/>`);
+  // 農業區——斜排街廓
+  h+=rr("ag",44,18,-18);
+  h+=rr("wec",50,18,-18);
+  h+=rr("nash",44,15,-18);
+  // GMC Stadium — 賽道環＋看台
+  {const V=VENUES.gmc,[x,y]=C.gmc;
+   const cx=x+30, cy=y-8;
+   h+=`<g class="zone" data-v="gmc">
+     <ellipse cx="${cx}" cy="${cy}" rx="54" ry="36" fill="none" stroke="${V.c}" stroke-width="11" opacity=".8"/>
+     <ellipse cx="${cx}" cy="${cy}" rx="30" ry="16" fill="${V.c}" opacity=".25"/>
+     <rect x="${x-32}" y="${y-14}" width="16" height="30" fill="${V.c}" opacity=".95"/>
+     <text x="${cx}" y="${cy+52}" text-anchor="middle">${V.lb}</text></g>`;}
+  h+=rr("coke",38,17,-18);
+  h+=rr("dog",34,13);
   h+=`<g id="gpspin" style="display:none">
     <circle class="pin-ring" r="14" fill="none" stroke="#1A1A1A" stroke-width="1.5"/>
     <circle r="5" fill="#1A1A1A" stroke="#FAF7F2" stroke-width="2"/>
@@ -661,7 +698,7 @@ function renderMap(){
   svg.innerHTML=h;
   svg.querySelectorAll(".zone").forEach(g=>g.addEventListener("click",()=>{
     activeVenue=(activeVenue===g.dataset.v)?"all":g.dataset.v;
-    renderChips(); render(); syncMap();
+    favOnly=false; renderChips(); render(); syncMap();
   }));
   syncMap();
 }
