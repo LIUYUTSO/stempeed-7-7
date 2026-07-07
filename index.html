@@ -166,8 +166,8 @@ details.allday .ev{grid-template-columns:1fr 30px}
 .chip.fav-chip.on{background:var(--now);border-color:var(--now)}
 
 /* ---------- map ---------- */
-.mapsec{max-width:720px;margin:16px auto 0;padding:0 20px}
-.map-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.mapsec{margin:16px 0 0;padding:0}
+.map-head{display:flex;justify-content:space-between;align-items:center;margin:0 auto 8px;padding:0 20px;max-width:720px}
 .map-title{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--sub)}
 .locate{
   font-size:11.5px;letter-spacing:.06em;padding:6px 14px;border-radius:999px;
@@ -175,9 +175,7 @@ details.allday .ev{grid-template-columns:1fr 30px}
 }
 .locate.on{background:var(--ink);color:#FAF7F2}
 .locate:disabled{opacity:.4}
-.mapbox{
-  border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#F3EEE6;
-}
+.mapbox{background:transparent}
 .mapbox svg{display:block;width:100%;height:auto}
 .zone{cursor:pointer;transition:opacity .2s ease}
 .zone rect{rx:3}
@@ -189,8 +187,8 @@ details.allday .ev{grid-template-columns:1fr 30px}
 #gpspin{transition:transform .8s ease}
 .pin-ring{animation:ring 2.4s ease-out infinite;transform-origin:center}
 @keyframes ring{0%{opacity:.5;transform:scale(.4)}100%{opacity:0;transform:scale(1.8)}}
-.map-note{font-size:10.5px;color:var(--sub);margin-top:6px;line-height:1.6}
-.nearby{margin-top:12px;display:none}
+.map-note{font-size:10.5px;color:var(--sub);margin:6px auto 0;padding:0 20px;max-width:720px;line-height:1.6}
+.nearby{margin:12px auto 0;padding:0 20px;max-width:720px;display:none}
 .nearby.show{display:block}
 .nb{
   display:flex;justify-content:space-between;align-items:baseline;gap:12px;
@@ -641,56 +639,67 @@ const GATES=[
 function renderMap(){
   const svg=document.getElementById("mapsvg");
   const C={}; for(const[k,V]of Object.entries(VENUES)) C[k]=proj(V.lat,V.lng);
-  const rr=(k,w,h,rot=0,shape="")=>{
-    const V=VENUES[k],[x,y]=C[k];
-    const body=shape||`<rect x="${(x-w/2).toFixed(1)}" y="${(y-h/2).toFixed(1)}" width="${w}" height="${h}" fill="${V.c}" opacity=".85"${rot?` transform="rotate(${rot} ${x.toFixed(1)} ${y.toFixed(1)})"`:""}/>`;
-    return `<g class="zone" data-v="${k}">${body}
+  const N={plaza:[9,-5],big4:[0,6],oasis:[-4,-2],taste:[0,-4]};
+  const at=k=>{const[x,y]=C[k];const[dx,dy]=N[k]||[0,0];return[x+dx,y+dy]};
+  const rr=(k,w,h,rot=0)=>{
+    const V=VENUES[k],[x,y]=at(k);
+    return `<g class="zone" data-v="${k}">
+      <rect x="${(x-w/2).toFixed(1)}" y="${(y-h/2).toFixed(1)}" width="${w}" height="${h}" fill="${V.c}" opacity=".85"${rot?` transform="rotate(${rot} ${x.toFixed(1)} ${y.toFixed(1)})"`:""}/>
       <text x="${x.toFixed(1)}" y="${(y+h/2+10).toFixed(1)}" text-anchor="middle">${V.lb}</text></g>`;
   };
-  let h=`<rect width="${MAP.W}" height="${MAP.H}" fill="#F3EEE6"/>
-  <!-- 街道 -->
-  <line x1="14" y1="10" x2="14" y2="${MAP.H-10}" stroke="#E5DFD5" stroke-width="3"/>
-  <line x1="10" y1="16" x2="${MAP.W-60}" y2="16" stroke="#E5DFD5" stroke-width="3"/>
-  <path d="M 150 16 L 186 ${MAP.H-16}" stroke="#E5DFD5" stroke-width="3" fill="none"/>
-  <!-- Elbow River -->
-  <path d="M 348 6 C 352 70 344 130 322 176 C 298 226 240 262 176 288" stroke="#D9E3E6" stroke-width="11" fill="none"/>
-  <text x="330" y="196" font-size="7" fill="#9AAAB0" font-family="Space Grotesk" letter-spacing=".08em">ELBOW R.</text>
-  <!-- Midway 走廊（裝飾） -->
-  <path d="M 128 128 L 158 128 L 178 250 L 146 258 Z" fill="#E3D3DC" opacity=".55"/>`;
+  let h=`<defs><pattern id="hatch" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+    <line x1="0" y1="0" x2="0" y2="6" stroke="#E6DCC2" stroke-width="2"/></pattern></defs>
+  <!-- 街道（官方：Macleod Tr 西緣、12 Ave 北緣、Olympic Way 斜貫） -->
+  <line x1="14" y1="8" x2="14" y2="${MAP.H-8}" stroke="#E5DFD5" stroke-width="3"/>
+  <line x1="8" y1="16" x2="300" y2="16" stroke="#E5DFD5" stroke-width="3"/>
+  <path d="M 150 16 L 188 ${MAP.H-12}" stroke="#E5DFD5" stroke-width="3" fill="none"/>
+  <!-- 施工區（官方黃色斜線） -->
+  <path d="M 152 22 L 216 22 L 208 58 L 160 62 Z" fill="url(#hatch)" opacity=".6"/>
+  <path d="M 48 150 L 98 146 L 92 186 L 44 190 Z" fill="url(#hatch)" opacity=".6"/>
+  <!-- Elbow River：東北入、沿東緣南下、繞過賽道、Erlton 橋後往西 -->
+  <path d="M 300 0 C 288 36 280 70 284 100 C 288 132 306 160 318 192 C 326 220 310 248 274 262 C 240 274 208 272 186 280 C 160 290 128 294 96 296"
+    stroke="#D9E3E6" stroke-width="11" fill="none"/>
+  <line x1="285" y1="94" x2="301" y2="94" stroke="#F3EEE6" stroke-width="5"/>
+  <line x1="196" y1="272" x2="204" y2="284" stroke="#F3EEE6" stroke-width="5"/>
+  <text x="322" y="176" font-size="7" fill="#9AAAB0" font-family="Space Grotesk" letter-spacing=".08em">ELBOW R.</text>
+  <!-- Midway 走廊（官方粉色帶，裝飾） -->
+  <path d="M 132 124 L 158 120 L 180 244 L 148 252 Z" fill="#E3D3DC" opacity=".5"/>`;
   for(const g of GATES){
     const[x,y]=proj(g.lat,g.lng);
     h+=`<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" font-size="7" fill="#6B6B6B" font-family="Space Grotesk" letter-spacing=".06em">${g.lb}</text>`;
   }
-  // BMO Centre — L 型建築群
+  // BMO Centre — 官方 L 型建築群描形
   {const V=VENUES.bmo,[x,y]=C.bmo;
-   h+=`<g class="zone" data-v="bmo"><path d="M ${x-36} ${y-34} L ${x+40} ${y-34} L ${x+40} ${y-6} L ${x+16} ${y-6} L ${x+16} ${y+28} L ${x-36} ${y+28} Z" fill="${V.c}" opacity=".85"/>
-   <text x="${x-8}" y="${y+40}" text-anchor="middle">${V.lb}</text></g>`;}
-  h+=rr("oasis",30,13);
-  h+=rr("taste",30,13);
-  h+=rr("plaza",30,12);
-  h+=rr("big4",42,20);
-  // Saddledome — 圓形
+   h+=`<g class="zone" data-v="bmo"><path d="M ${x-34} ${y-42} L ${x+10} ${y-54} L ${x+36} ${y-38} L ${x+24} ${y-22} L ${x+46} ${y-8} L ${x+34} ${y+18} L ${x+8} ${y+12} L ${x} ${y+30} L ${x-34} ${y+22} Z" fill="${V.c}" opacity=".85"/>
+   <text x="${x-2}" y="${y+42}" text-anchor="middle">${V.lb}</text></g>`;}
+  h+=rr("oasis",28,12);
+  h+=rr("taste",28,12);
+  h+=rr("plaza",28,11);
+  h+=rr("big4",40,16);
+  // Saddledome — 官方深灰圓頂
   {const V=VENUES.dome,[x,y]=C.dome;
-   h+=`<g class="zone" data-v="dome"><circle cx="${x}" cy="${y}" r="21" fill="${V.c}" opacity=".9"/>
-   <text x="${x}" y="${y+33}" text-anchor="middle">${V.lb}</text></g>`;}
-  h+=rr("comp",42,16);
-  h+=rr("kids",44,16);
-  h+=rr("elbow",44,24,0,
-    `<rect x="${C.elbow[0]-22}" y="${C.elbow[1]-12}" width="44" height="24" fill="${VENUES.elbow.c}" opacity=".85" rx="10"/>`);
-  // 農業區——斜排街廓
-  h+=rr("ag",44,18,-18);
-  h+=rr("wec",50,18,-18);
-  h+=rr("nash",44,15,-18);
-  // GMC Stadium — 賽道環＋看台
+   h+=`<g class="zone" data-v="dome"><ellipse cx="${x}" cy="${y}" rx="24" ry="20" fill="${V.c}" opacity=".9"/>
+   <text x="${x}" y="${y+32}" text-anchor="middle">${V.lb}</text></g>`;}
+  h+=rr("comp",42,15);
+  h+=rr("kids",44,15);
+  // Elbow River Camp — 官方直向帶狀（河東側）
+  {const V=VENUES.elbow,[x,y]=C.elbow;
+   h+=`<g class="zone" data-v="elbow"><rect x="${x-20}" y="${y-26}" width="40" height="52" rx="17" fill="${V.c}" opacity=".85"/>
+   <text x="${x}" y="${y+38}" text-anchor="middle">${V.lb}</text></g>`;}
+  // 農業區斜排街廓
+  h+=rr("ag",44,17,-18);
+  h+=rr("wec",50,17,-18);
+  h+=rr("nash",42,14,-18);
+  // GMC Stadium — 賽道環＋內場＋西側看台
   {const V=VENUES.gmc,[x,y]=C.gmc;
-   const cx=x+30, cy=y-8;
+   const cx=x+30, cy=y-9;
    h+=`<g class="zone" data-v="gmc">
-     <ellipse cx="${cx}" cy="${cy}" rx="54" ry="36" fill="none" stroke="${V.c}" stroke-width="11" opacity=".8"/>
-     <ellipse cx="${cx}" cy="${cy}" rx="30" ry="16" fill="${V.c}" opacity=".25"/>
-     <rect x="${x-32}" y="${y-14}" width="16" height="30" fill="${V.c}" opacity=".95"/>
-     <text x="${cx}" y="${cy+52}" text-anchor="middle">${V.lb}</text></g>`;}
-  h+=rr("coke",38,17,-18);
-  h+=rr("dog",34,13);
+     <ellipse cx="${cx}" cy="${cy}" rx="52" ry="34" fill="none" stroke="${V.c}" stroke-width="10" opacity=".8"/>
+     <ellipse cx="${cx}" cy="${cy}" rx="28" ry="15" fill="${V.c}" opacity=".22"/>
+     <rect x="${x-30}" y="${y-24}" width="13" height="32" fill="${V.c}" opacity=".95"/>
+     <text x="${cx}" y="${cy+50}" text-anchor="middle">${V.lb}</text></g>`;}
+  h+=rr("coke",36,16,-18);
+  h+=rr("dog",32,12);
   h+=`<g id="gpspin" style="display:none">
     <circle class="pin-ring" r="14" fill="none" stroke="#1A1A1A" stroke-width="1.5"/>
     <circle r="5" fill="#1A1A1A" stroke="#FAF7F2" stroke-width="2"/>
