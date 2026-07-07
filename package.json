@@ -1,0 +1,8 @@
+{
+  "name": "stempeed-7-7",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.4"
+  }
+}
