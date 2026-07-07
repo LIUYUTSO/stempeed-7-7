@@ -229,7 +229,7 @@ details.allday .ev{grid-template-columns:1fr 30px}
     <div class="map-title">Park Map · 點色塊篩選</div>
     <button class="locate" id="locBtn">定位</button>
   </div>
-  <div class="mapbox"><svg id="mapsvg" viewBox="0 0 360 300" role="img" aria-label="園區示意地圖"></svg></div>
+  <div class="mapbox"><svg id="mapsvg" viewBox="0 0 360 330" role="img" aria-label="園區示意地圖"></svg></div>
   <div class="map-note" id="mapNote">場域位置為示意配置（非精準比例）。按「定位」後以你的 GPS 顯示附近活動。</div>
   <div class="nearby" id="nearby"></div>
 </section>
@@ -245,21 +245,21 @@ details.allday .ev{grid-template-columns:1fr 30px}
 /* ================= DATA ================= */
 /* t = 開始時間（分鐘，凌晨跨日 >1440）；tk = ticketed */
 const VENUES = {
-  gmc:   {name:"GMC Stadium",              c:"#8C2F1B", lat:51.0338, lng:-114.0518, w:56, h:30, lb:"GMC STADIUM · INFIELD"},
-  wec:   {name:"Nutrien Western Event Ctr",c:"#5A7A4A", lat:51.0352, lng:-114.0520, w:52, h:22, lb:"NUTRIEN WEC"},
-  ag:    {name:"Agriculture Zone",         c:"#8FA878", lat:51.0361, lng:-114.0506, w:46, h:20, lb:"AG ZONE"},
-  dome:  {name:"Scotiabank Saddledome",    c:"#6E6E74", lat:51.0382, lng:-114.0530, w:52, h:34, lb:"SADDLEDOME"},
-  nash:  {name:"Nashville North",          c:"#A98B5F", lat:51.0344, lng:-114.0546, w:46, h:18, lb:"NASHVILLE N"},
-  big4:  {name:"Big Four Roadhouse",       c:"#4E8C7E", lat:51.0378, lng:-114.0576, w:44, h:20, lb:"BIG FOUR"},
-  coke:  {name:"Coca-Cola Stage",          c:"#C2543B", lat:51.0331, lng:-114.0570, w:40, h:20, lb:"COCA-COLA"},
-  oasis: {name:"Western Oasis",            c:"#4A6FA0", lat:51.0401, lng:-114.0603, w:34, h:14, lb:"OASIS"},
-  taste: {name:"Taste of Stampede",        c:"#3E618F", lat:51.0402, lng:-114.0578, w:34, h:14, lb:"TASTE"},
-  bmo:   {name:"BMO Centre / Market",      c:"#35547E", lat:51.0391, lng:-114.0592, w:56, h:28, lb:"BMO CENTRE"},
-  plaza: {name:"BMO Plaza / Staircase",    c:"#5E82AE", lat:51.0384, lng:-114.0568, w:32, h:13, lb:"PLAZA"},
-  elbow: {name:"Elbow River Camp",         c:"#C77B3A", lat:51.0394, lng:-114.0478, w:48, h:24, lb:"ELBOW RIVER CAMP"},
-  comp:  {name:"The Compound",             c:"#3C4A48", lat:51.0403, lng:-114.0516, w:42, h:18, lb:"COMPOUND"},
-  dog:   {name:"Dog Bowl",                 c:"#4A6A50", lat:51.0326, lng:-114.0546, w:36, h:16, lb:"DOG BOWL"},
-  kids:  {name:"Kids' Midway",             c:"#C9A63C", lat:51.0403, lng:-114.0546, w:44, h:18, lb:"KIDS' MIDWAY"},
+  gmc:   {name:"GMC Stadium",              c:"#8C2F1B", lat:51.0341, lng:-114.0546, mx:112, my:251, lb:"GMC STADIUM"},
+  wec:   {name:"Nutrien Western Event Ctr",c:"#5A7A4A", lat:51.0355, lng:-114.0534, mx:132, my:191, lb:"NUTRIEN WEC"},
+  ag:    {name:"Agriculture Zone",         c:"#8FA878", lat:51.0360, lng:-114.0522, mx:170, my:179, lb:"AG BUILDING"},
+  dome:  {name:"Scotiabank Saddledome",    c:"#6E6E74", lat:51.0374, lng:-114.0519, mx:204, my:129, lb:"SADDLEDOME"},
+  nash:  {name:"Nashville North",          c:"#A98B5F", lat:51.0348, lng:-114.0541, mx:104, my:211, lb:"NASHVILLE N"},
+  big4:  {name:"Big Four Roadhouse",       c:"#4E8C7E", lat:51.0362, lng:-114.0570, mx:42,  my:176, lb:"BIG FOUR"},
+  coke:  {name:"Coca-Cola Stage",          c:"#C2543B", lat:51.0338, lng:-114.0575, mx:48,  my:254, lb:"COCA-COLA"},
+  oasis: {name:"Western Oasis",            c:"#4A6FA0", lat:51.0399, lng:-114.0587, mx:78,  my:100, lb:"OASIS"},
+  taste: {name:"Taste of Stampede",        c:"#3E618F", lat:51.0400, lng:-114.0570, mx:122, my:94,  lb:"TASTE"},
+  bmo:   {name:"BMO Centre / Market",      c:"#35547E", lat:51.0396, lng:-114.0576, mx:110, my:126, lb:"BMO CENTRE"},
+  plaza: {name:"BMO Plaza / Staircase",    c:"#5E82AE", lat:51.0387, lng:-114.0557, mx:158, my:138, lb:"PLAZA"},
+  elbow: {name:"Elbow River Camp",         c:"#C77B3A", lat:51.0386, lng:-114.0470, mx:322, my:114, lb:"ELBOW RIVER CAMP"},
+  comp:  {name:"The Compound",             c:"#3C4A48", lat:51.0375, lng:-114.0498, mx:250, my:140, lb:"COMPOUND"},
+  dog:   {name:"Dog Bowl",                 c:"#4A6A50", lat:51.0328, lng:-114.0520, mx:164, my:308, lb:"DOG BOWL"},
+  kids:  {name:"Kids' Midway",             c:"#C9A63C", lat:51.0367, lng:-114.0495, mx:242, my:176, lb:"KIDS' MIDWAY"},
 };
 const m=(h,mi=0)=>h*60+mi;
 const EV=[
@@ -462,9 +462,40 @@ const store={
   set(a){try{localStorage.setItem("stampede-favs-0707",JSON.stringify(a))}catch(_){/* 私密模式等情況：僅存記憶體 */}}
 };
 favs=new Set(store.get());
+/* ---- 後端同步（Neon via /api/favs；未設定 DATABASE_URL 時靜默降級為純本機） ---- */
+const deviceId=(()=>{try{
+  let d=localStorage.getItem("stampede-device");
+  if(!d){d=(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random().toString(36).slice(2));localStorage.setItem("stampede-device",d)}
+  return d;
+}catch(_){return "mem-"+Math.random().toString(36).slice(2)}})();
+let syncTimer=null;
+function pushFavs(){
+  clearTimeout(syncTimer);
+  syncTimer=setTimeout(()=>{
+    fetch(`/api/favs?device=${encodeURIComponent(deviceId)}`,{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({favs:[...favs]})
+    }).catch(()=>{/* 離線或後端未設定：本機仍完整可用 */});
+  },800);
+}
+async function pullFavs(){
+  try{
+    const r=await fetch(`/api/favs?device=${encodeURIComponent(deviceId)}`);
+    if(!r.ok)return;
+    const d=await r.json();
+    if(Array.isArray(d.favs)&&d.favs.length){
+      const before=favs.size;
+      d.favs.forEach(id=>favs.add(id));
+      store.set([...favs]);
+      if(favs.size!==before){renderChips();render()}
+    }
+  }catch(_){/* 靜默 */}
+}
+pullFavs();
 function toggleFav(id){
   favs.has(id)?favs.delete(id):favs.add(id);
   store.set([...favs]);
+  pushFavs();
   render(); renderNextUp();
 }
 const LIVE_WINDOW=45;   // 開始後 45 分鐘內視為進行中
@@ -623,82 +654,91 @@ function renderChips(){
 }
 
 /* ================= MAP ================= */
-const MAP={W:360,H:300,pad:26,
+const MAP={W:360,H:330,
   latMax:51.0424,latMin:51.0320,lngMin:-114.0618,lngMax:-114.0462};
-function proj(lat,lng){
-  const x=MAP.pad+(lng-MAP.lngMin)/(MAP.lngMax-MAP.lngMin)*(MAP.W-MAP.pad*2);
-  const y=MAP.pad+(MAP.latMax-lat)/(MAP.latMax-MAP.latMin)*(MAP.H-MAP.pad*2);
-  return [x,y];
-}
+/* GPS→地圖：以場域(經緯度,描圖座標)最小平方擬合線性映射 */
+const FIT=(()=>{ 
+  const vs=Object.values(VENUES);
+  const fit=(xs,ys)=>{const n=xs.length,mx=xs.reduce((a,b)=>a+b)/n,my=ys.reduce((a,b)=>a+b)/n;
+    let num=0,den=0;for(let i=0;i<n;i++){num+=(xs[i]-mx)*(ys[i]-my);den+=(xs[i]-mx)**2}
+    const b=num/den;return[my-b*mx,b]};
+  const[ax,bx]=fit(vs.map(v=>v.lng),vs.map(v=>v.mx));
+  const[ay,by]=fit(vs.map(v=>v.lat),vs.map(v=>v.my));
+  return{ax,bx,ay,by};
+})();
+function proj(lat,lng){return[FIT.ax+FIT.bx*lng, FIT.ay+FIT.by*lat]}
 const GATES=[
-  {lat:51.0419,lng:-114.0556,lb:"STAMPEDE TRAIL 入口"},
-  {lat:51.0398,lng:-114.0614,lb:"VICTORIA PARK 入口"},
-  {lat:51.0322,lng:-114.0530,lb:"ERLTON 入口"},
-  {lat:51.0412,lng:-114.0468,lb:"MacDONALD 入口"},
+  {mx:166,my:74, lb:"STAMPEDE TRAIL 入口"},
+  {mx:22, my:121,lb:"VICTORIA PARK 入口"},
+  {mx:70, my:320,lb:"ERLTON 入口"},
+  {mx:336,my:96, lb:"MacDONALD 入口"},
 ];
 function renderMap(){
   const svg=document.getElementById("mapsvg");
-  const C={}; for(const[k,V]of Object.entries(VENUES)) C[k]=proj(V.lat,V.lng);
-  const N={plaza:[9,-5],big4:[0,6],oasis:[-4,-2],taste:[0,-4]};
-  const at=k=>{const[x,y]=C[k];const[dx,dy]=N[k]||[0,0];return[x+dx,y+dy]};
   const rr=(k,w,h,rot=0)=>{
-    const V=VENUES[k],[x,y]=at(k);
+    const V=VENUES[k],x=V.mx,y=V.my;
     return `<g class="zone" data-v="${k}">
-      <rect x="${(x-w/2).toFixed(1)}" y="${(y-h/2).toFixed(1)}" width="${w}" height="${h}" fill="${V.c}" opacity=".85"${rot?` transform="rotate(${rot} ${x.toFixed(1)} ${y.toFixed(1)})"`:""}/>
-      <text x="${x.toFixed(1)}" y="${(y+h/2+10).toFixed(1)}" text-anchor="middle">${V.lb}</text></g>`;
+      <rect x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" fill="${V.c}" opacity=".85"${rot?` transform="rotate(${rot} ${x} ${y})"`:""}/>
+      <text x="${x}" y="${y+h/2+10}" text-anchor="middle">${V.lb}</text></g>`;
   };
   let h=`<defs><pattern id="hatch" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
     <line x1="0" y1="0" x2="0" y2="6" stroke="#E6DCC2" stroke-width="2"/></pattern></defs>
-  <!-- 街道（官方：Macleod Tr 西緣、12 Ave 北緣、Olympic Way 斜貫） -->
-  <line x1="14" y1="8" x2="14" y2="${MAP.H-8}" stroke="#E5DFD5" stroke-width="3"/>
-  <line x1="8" y1="16" x2="300" y2="16" stroke="#E5DFD5" stroke-width="3"/>
-  <path d="M 150 16 L 188 ${MAP.H-12}" stroke="#E5DFD5" stroke-width="3" fill="none"/>
-  <!-- 施工區（官方黃色斜線） -->
-  <path d="M 152 22 L 216 22 L 208 58 L 160 62 Z" fill="url(#hatch)" opacity=".6"/>
-  <path d="M 48 150 L 98 146 L 92 186 L 44 190 Z" fill="url(#hatch)" opacity=".6"/>
-  <!-- Elbow River：東北入、沿東緣南下、繞過賽道、Erlton 橋後往西 -->
-  <path d="M 300 0 C 288 36 280 70 284 100 C 288 132 306 160 318 192 C 326 220 310 248 274 262 C 240 274 208 272 186 280 C 160 290 128 294 96 296"
+  <!-- 街道：Macleod Tr、12 Ave、Stampede Trail→Olympic Way -->
+  <line x1="18" y1="6" x2="18" y2="324" stroke="#E5DFD5" stroke-width="3"/>
+  <line x1="6" y1="12" x2="300" y2="12" stroke="#E5DFD5" stroke-width="3"/>
+  <path d="M 164 12 L 164 100 C 164 150 178 200 172 280" stroke="#E5DFD5" stroke-width="3" fill="none"/>
+  <!-- 施工區（官方黃斜線）：Stampede Trail 東側、Victoria Park 南側 -->
+  <path d="M 176 22 L 232 22 L 226 70 L 180 74 Z" fill="url(#hatch)" opacity=".6"/>
+  <path d="M 34 138 L 70 134 L 66 168 L 32 170 Z" fill="url(#hatch)" opacity=".6"/>
+  <!-- Cowboys Casino（園區外地標） -->
+  <rect x="106" y="20" width="34" height="18" fill="#8C2F1B" opacity=".35"/>
+  <text x="123" y="49" text-anchor="middle" font-size="6.5" fill="#9A938A" font-family="Space Grotesk" letter-spacing=".05em">COWBOYS CASINO</text>
+  <!-- Elbow River：東北入、camp 西側橋、沿東南下、繞賽道、Erlton 橋西出 -->
+  <path d="M 296 0 C 292 50 288 90 289 126 C 290 176 268 236 226 282 C 196 314 134 322 72 318"
     stroke="#D9E3E6" stroke-width="11" fill="none"/>
-  <line x1="285" y1="94" x2="301" y2="94" stroke="#F3EEE6" stroke-width="5"/>
-  <line x1="196" y1="272" x2="204" y2="284" stroke="#F3EEE6" stroke-width="5"/>
-  <text x="322" y="176" font-size="7" fill="#9AAAB0" font-family="Space Grotesk" letter-spacing=".08em">ELBOW R.</text>
-  <!-- Midway 走廊（官方粉色帶，裝飾） -->
-  <path d="M 132 124 L 158 120 L 180 244 L 148 252 Z" fill="#E3D3DC" opacity=".5"/>`;
+  <line x1="282" y1="112" x2="298" y2="112" stroke="#F3EEE6" stroke-width="5"/>
+  <line x1="64" y1="314" x2="80" y2="322" stroke="#F3EEE6" stroke-width="5"/>
+  <text x="300" y="212" font-size="7" fill="#9AAAB0" font-family="Space Grotesk" letter-spacing=".08em">ELBOW R.</text>
+  <!-- Midway（官方紫色區，裝飾） -->
+  <path d="M 66 152 L 148 148 L 156 200 L 132 242 L 62 236 Z" fill="#DCC9DA" opacity=".45"/>
+  <!-- FUNtier（官方黃色帶，裝飾底） -->
+  <path d="M 222 150 L 268 146 L 272 208 L 228 214 Z" fill="#EBDCA8" opacity=".4"/>`;
   for(const g of GATES){
-    const[x,y]=proj(g.lat,g.lng);
-    h+=`<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" font-size="7" fill="#6B6B6B" font-family="Space Grotesk" letter-spacing=".06em">${g.lb}</text>`;
+    h+=`<text x="${g.mx}" y="${g.my}" text-anchor="middle" font-size="7" fill="#6B6B6B" font-family="Space Grotesk" letter-spacing=".06em">${g.lb}</text>`;
   }
-  // BMO Centre — 官方 L 型建築群描形
-  {const V=VENUES.bmo,[x,y]=C.bmo;
-   h+=`<g class="zone" data-v="bmo"><path d="M ${x-34} ${y-42} L ${x+10} ${y-54} L ${x+36} ${y-38} L ${x+24} ${y-22} L ${x+46} ${y-8} L ${x+34} ${y+18} L ${x+8} ${y+12} L ${x} ${y+30} L ${x-34} ${y+22} Z" fill="${V.c}" opacity=".85"/>
-   <text x="${x-2}" y="${y+42}" text-anchor="middle">${V.lb}</text></g>`;}
-  h+=rr("oasis",28,12);
-  h+=rr("taste",28,12);
-  h+=rr("plaza",28,11);
-  h+=rr("big4",40,16);
-  // Saddledome — 官方深灰圓頂
-  {const V=VENUES.dome,[x,y]=C.dome;
-   h+=`<g class="zone" data-v="dome"><ellipse cx="${x}" cy="${y}" rx="24" ry="20" fill="${V.c}" opacity=".9"/>
-   <text x="${x}" y="${y+32}" text-anchor="middle">${V.lb}</text></g>`;}
-  h+=rr("comp",42,15);
-  h+=rr("kids",44,15);
-  // Elbow River Camp — 官方直向帶狀（河東側）
-  {const V=VENUES.elbow,[x,y]=C.elbow;
-   h+=`<g class="zone" data-v="elbow"><rect x="${x-20}" y="${y-26}" width="40" height="52" rx="17" fill="${V.c}" opacity=".85"/>
+  // BMO Centre — 官方藍色建築群（西北翼群＋南主廳缺口）
+  {const V=VENUES.bmo,x=V.mx,y=V.my;
+   h+=`<g class="zone" data-v="bmo"><path d="M ${x-40} ${y-52} L ${x-4} ${y-64} L ${x+28} ${y-46} L ${x+14} ${y-28} L ${x+44} ${y-14} L ${x+40} ${y+16} L ${x+10} ${y+26} L ${x+2} ${y+10} L ${x-24} ${y+22} L ${x-38} ${y-6} Z" fill="${V.c}" opacity=".85"/>
    <text x="${x}" y="${y+38}" text-anchor="middle">${V.lb}</text></g>`;}
-  // 農業區斜排街廓
-  h+=rr("ag",44,17,-18);
-  h+=rr("wec",50,17,-18);
-  h+=rr("nash",42,14,-18);
-  // GMC Stadium — 賽道環＋內場＋西側看台
-  {const V=VENUES.gmc,[x,y]=C.gmc;
-   const cx=x+30, cy=y-9;
+  h+=rr("oasis",26,11);
+  h+=rr("taste",26,11);
+  h+=rr("plaza",26,11);
+  // Big Four — 官方西側直向長棟
+  h+=rr("big4",20,54,6);
+  // Saddledome — 圓頂
+  {const V=VENUES.dome,x=V.mx,y=V.my;
+   h+=`<g class="zone" data-v="dome"><ellipse cx="${x}" cy="${y}" rx="26" ry="20" fill="${V.c}" opacity=".9"/>
+   <text x="${x}" y="${y-26}" text-anchor="middle">${V.lb}</text></g>`;}
+  h+=rr("comp",36,13);
+  // Elbow River Camp — 河東直向帶
+  {const V=VENUES.elbow,x=V.mx,y=V.my;
+   h+=`<g class="zone" data-v="elbow"><rect x="${x-18}" y="${y-28}" width="36" height="56" rx="16" fill="${V.c}" opacity=".85"/>
+   <text x="${x}" y="${y+40}" text-anchor="middle">${V.lb}</text></g>`;}
+  // 農業區斜排（官方綠色兩棟）＋ Nashville 斜棟
+  h+=rr("ag",38,16,-20);
+  h+=rr("wec",40,16,-20);
+  h+=rr("nash",34,13,-25);
+  h+=rr("kids",40,14);
+  // GMC Stadium — 斜向看台＋東側斜賽道（官方 Infield）
+  {const V=VENUES.gmc,x=V.mx,y=V.my;
    h+=`<g class="zone" data-v="gmc">
-     <ellipse cx="${cx}" cy="${cy}" rx="52" ry="34" fill="none" stroke="${V.c}" stroke-width="10" opacity=".8"/>
-     <ellipse cx="${cx}" cy="${cy}" rx="28" ry="15" fill="${V.c}" opacity=".22"/>
-     <rect x="${x-30}" y="${y-24}" width="13" height="32" fill="${V.c}" opacity=".95"/>
-     <text x="${cx}" y="${cy+50}" text-anchor="middle">${V.lb}</text></g>`;}
-  h+=rr("coke",36,16,-18);
+     <g transform="rotate(-15 ${x+52} ${y+2})">
+       <ellipse cx="${x+52}" cy="${y+2}" rx="46" ry="33" fill="none" stroke="${V.c}" stroke-width="10" opacity=".75"/>
+       <ellipse cx="${x+52}" cy="${y+2}" rx="24" ry="14" fill="${V.c}" opacity=".2"/>
+     </g>
+     <rect x="${x-8}" y="${y-24}" width="13" height="46" fill="${V.c}" opacity=".95" transform="rotate(-28 ${x} ${y})"/>
+     <text x="${x+40}" y="${y+50}" text-anchor="middle">${V.lb}</text></g>`;}
+  h+=rr("coke",34,16);
   h+=rr("dog",32,12);
   h+=`<g id="gpspin" style="display:none">
     <circle class="pin-ring" r="14" fill="none" stroke="#1A1A1A" stroke-width="1.5"/>
