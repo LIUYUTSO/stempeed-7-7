@@ -175,6 +175,23 @@ details.allday .ev{grid-template-columns:1fr 30px}
 }
 .locate.on{background:var(--ink);color:#FAF7F2}
 .locate:disabled{opacity:.4}
+.here-btn{
+  font-size:11.5px;letter-spacing:.06em;padding:6px 14px;border-radius:999px;
+  background:var(--ink);color:#FAF7F2;transition:opacity .2s ease;
+}
+.here-btn:disabled{opacity:.4}
+.namepick{
+  display:none;gap:8px;margin:0 auto 10px;padding:0 20px;max-width:720px;flex-wrap:wrap;
+}
+.namepick.show{display:flex}
+.namepick button{
+  padding:8px 16px;border-radius:999px;border:1px solid var(--ink);
+  font-size:13px;letter-spacing:.04em;transition:all .15s ease;
+}
+.namepick button:active{background:var(--ink);color:#FAF7F2}
+.namepick .cancel{border-color:var(--line);color:var(--sub)}
+.fr-ring{animation:breathe 2.4s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:.12}50%{opacity:.55}}
 .mapbox{background:transparent}
 .mapbox svg{display:block;width:100%;height:auto}
 .zone{cursor:pointer;transition:opacity .2s ease}
@@ -227,8 +244,12 @@ details.allday .ev{grid-template-columns:1fr 30px}
 <section class="mapsec">
   <div class="map-head">
     <div class="map-title">Park Map · 點色塊篩選</div>
-    <button class="locate" id="locBtn">定位</button>
+    <div style="display:flex;gap:8px">
+      <button class="here-btn" id="hereBtn">I'm here</button>
+      <button class="locate" id="locBtn">定位</button>
+    </div>
   </div>
+  <div class="namepick" id="namepick"></div>
   <div class="mapbox"><svg id="mapsvg" viewBox="0 0 360 330" role="img" aria-label="園區示意地圖"></svg></div>
   <div class="map-note" id="mapNote">場域位置為示意配置（非精準比例）。按「定位」後以你的 GPS 顯示附近活動。</div>
   <div class="nearby" id="nearby"></div>
@@ -740,7 +761,8 @@ function renderMap(){
      <text x="${x+40}" y="${y+50}" text-anchor="middle">${V.lb}</text></g>`;}
   h+=rr("coke",34,16);
   h+=rr("dog",32,12);
-  h+=`<g id="gpspin" style="display:none">
+  h+=`<g id="friendpins"></g>
+  <g id="gpspin" style="display:none">
     <circle class="pin-ring" r="14" fill="none" stroke="#1A1A1A" stroke-width="1.5"/>
     <circle r="5" fill="#1A1A1A" stroke="#FAF7F2" stroke-width="2"/>
   </g>`;
@@ -833,6 +855,80 @@ function renderNearby(){
   box.classList.add("show");
 }
 
+/* ================= FRIENDS ================= */
+const FRIENDS=["Aiden","Becky","Grace","Adam"];
+let myName=null;
+try{myName=localStorage.getItem("stampede-name")}catch(_){}
+let friendLocs=[];
+
+function getOnce(){
+  return new Promise((ok,no)=>{
+    if(userPos)return ok(userPos);
+    if(!("geolocation" in navigator))return no(new Error("no-geo"));
+    navigator.geolocation.getCurrentPosition(
+      p=>ok({lat:p.coords.latitude,lng:p.coords.longitude}),
+      e=>no(e),{enableHighAccuracy:true,timeout:12000,maximumAge:10000});
+  });
+}
+async function announceHere(name){
+  const btn=document.getElementById("hereBtn");
+  btn.disabled=true;btn.textContent="上傳中";
+  try{
+    const pos=await getOnce();
+    const r=await fetch("/api/here",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({name,lat:pos.lat,lng:pos.lng})});
+    if(!r.ok){const d=await r.json().catch(()=>({}));throw new Error(d.error||r.status)}
+    myName=name;
+    try{localStorage.setItem("stampede-name",name)}catch(_){}
+    document.getElementById("mapNote").textContent=`已標記 ${name} 的位置——朋友的地圖 30 秒內會看到你。`;
+    fetchFriends();
+  }catch(e){
+    document.getElementById("mapNote").textContent=
+      e.message==="db-not-configured"?"後端尚未設定 DATABASE_URL，暫時無法共享定位。"
+      :"定位上傳失敗（"+(e.code===1?"定位權限被拒":"請再試一次")+"）。";
+  }
+  btn.disabled=false;btn.textContent="I'm here";
+}
+function showNamePick(){
+  const box=document.getElementById("namepick");
+  if(box.classList.contains("show")){box.classList.remove("show");return}
+  box.innerHTML=FRIENDS.map(n=>`<button data-n="${n}">${n===myName?"● ":""}${n}</button>`).join("")
+    +`<button class="cancel" data-n="">取消</button>`;
+  box.classList.add("show");
+  box.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{
+    box.classList.remove("show");
+    if(b.dataset.n) announceHere(b.dataset.n);
+  }));
+}
+document.getElementById("hereBtn").addEventListener("click",showNamePick);
+
+async function fetchFriends(){
+  try{
+    const r=await fetch("/api/here");
+    if(!r.ok)return;
+    const d=await r.json();
+    friendLocs=Array.isArray(d.locs)?d.locs:[];
+    renderFriends();
+  }catch(_){/* 靜默 */}
+}
+function renderFriends(){
+  const layer=document.getElementById("friendpins");
+  if(!layer)return;
+  layer.innerHTML=friendLocs.map(f=>{
+    let[x,y]=proj(f.lat,f.lng);
+    x=Math.min(MAP.W-12,Math.max(12,x)); y=Math.min(MAP.H-16,Math.max(12,y));
+    const mine=f.name===myName;
+    const age=f.age_s>300?` · ${Math.round(f.age_s/60)}'`:"";
+    return `<g transform="translate(${x.toFixed(1)},${y.toFixed(1)})">
+      <circle class="fr-ring" r="11" fill="#1A1A1A"/>
+      <circle r="4" fill="#1A1A1A" stroke="#FAF7F2" stroke-width="1.5"/>
+      <text y="20" text-anchor="middle" font-size="7" font-family="Space Grotesk" letter-spacing=".08em"
+        fill="#1A1A1A"${mine?' font-weight="600"':""}>${f.name.toUpperCase()}${age}</text>
+    </g>`;
+  }).join("");
+}
+fetchFriends();
+
 /* ================= CLOCK ================= */
 function tickClock(){
   const d=new Date();
@@ -845,7 +941,7 @@ const qEl=document.getElementById("q"), sb=document.getElementById("sb");
 qEl.addEventListener("input",()=>{query=qEl.value;sb.classList.toggle("has-q",!!query);render()});
 document.getElementById("clr").addEventListener("click",()=>{qEl.value="";query="";sb.classList.remove("has-q");render();qEl.focus()});
 renderChips(); render(); renderMap(); tickClock();
-setInterval(()=>{tickClock();render();renderNearby();renderNextUp()},30000); // 每 30 秒重算狀態
+setInterval(()=>{tickClock();render();renderNearby();renderNextUp();fetchFriends()},30000); // 每 30 秒重算狀態
 </script>
 </body>
 </html>
