@@ -4,8 +4,9 @@ const NAMES = ['Aiden', 'Becky', 'Grace', 'Adam'];
 
 export default async function handler(req, res) {
   try {
-    if (!process.env.DATABASE_URL) return res.status(503).json({ error: 'db-not-configured' });
-    const sql = neon(process.env.DATABASE_URL);
+    const dbUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING;
+    if (!dbUrl) return res.status(503).json({ error: 'db-not-configured' });
+    const sql = neon(dbUrl);
     await sql`CREATE TABLE IF NOT EXISTS stampede_locs(
       name text PRIMARY KEY,
       lat double precision NOT NULL,
