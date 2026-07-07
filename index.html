@@ -616,7 +616,7 @@ function render(){
     }
   }
   if(alldays.length){
-    html+=`<details class="allday"${(q||activeVenue!=="all")?" open":""}>
+    html+=`<details class="allday"${(tokens.length||activeVenue!=="all"||favOnly)?" open":""}>
       <summary>全天開放（${alldays.length}）<span class="tw">▸</span></summary>
       <div style="margin-top:9px">${alldays.map(e=>evCard(e,"ad")).join("")}</div>
     </details>`;
