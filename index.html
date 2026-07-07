@@ -139,6 +139,32 @@ footer{
   font-size:10.5px;color:var(--sub);line-height:1.8;letter-spacing:.03em;
 }
 
+/* ---------- next-up banner ---------- */
+.nextup{max-width:720px;margin:14px auto 0;padding:0 20px;display:none}
+.nextup.show{display:block}
+.nu-card{
+  background:var(--ink);color:#FAF7F2;border-radius:var(--r);
+  padding:13px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;
+}
+.nu-l{min-width:0}
+.nu-tag{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;opacity:.55}
+.nu-name{font-size:14.5px;font-weight:600;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nu-meta{font-size:11.5px;opacity:.7;margin-top:2px}
+.nu-r{text-align:right;flex:0 0 auto;font-variant-numeric:tabular-nums}
+.nu-count{font-size:19px;font-weight:600;line-height:1.1}
+.nu-count small{font-size:10px;font-weight:400;opacity:.6;display:block;letter-spacing:.08em}
+
+/* ---------- star ---------- */
+.ev{grid-template-columns:58px 1fr 30px}
+.star{
+  width:30px;height:30px;border-radius:50%;font-size:16px;line-height:1;
+  color:#C9C2B6;transition:color .2s ease, transform .2s ease;align-self:center;
+}
+.star:active{transform:scale(.85)}
+.star.on{color:#B3402A}
+details.allday .ev{grid-template-columns:1fr 30px}
+.chip.fav-chip.on{background:var(--now);border-color:var(--now)}
+
 /* ---------- map ---------- */
 .mapsec{max-width:720px;margin:16px auto 0;padding:0 20px}
 .map-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
@@ -197,6 +223,8 @@ footer{
   </div>
   <div class="chips" id="chips"></div>
 </header>
+
+<div class="nextup" id="nextup"></div>
 
 <section class="mapsec">
   <div class="map-head">
@@ -426,8 +454,21 @@ for(const e of EV){
   e.zh=z;
 }
 
+EV.forEach((e,i)=>e.id=i);
+
 /* ================= STATE ================= */
-let activeVenue="all", query="";
+let activeVenue="all", query="", favOnly=false;
+let favs=new Set();
+const store={
+  get(){try{const r=localStorage.getItem("stampede-favs-0707");return r?JSON.parse(r):[]}catch(_){return[]}},
+  set(a){try{localStorage.setItem("stampede-favs-0707",JSON.stringify(a))}catch(_){/* 私密模式等情況：僅存記憶體 */}}
+};
+favs=new Set(store.get());
+function toggleFav(id){
+  favs.has(id)?favs.delete(id):favs.add(id);
+  store.set([...favs]);
+  render(); renderNextUp();
+}
 const LIVE_WINDOW=45;   // 開始後 45 分鐘內視為進行中
 const SOON_WINDOW=60;   // 60 分鐘內開始視為即將開始
 
@@ -458,12 +499,14 @@ function evCard(e,status){
   const timeCol=e.ad
     ? `<div class="ev-time" style="font-size:12px;font-weight:500">ALL<br>DAY</div>`
     : `<div class="ev-time">${f.h}<small>${f.ap}</small></div>`;
+  const on=favs.has(e.id);
   return `<div class="${cls}" style="--c:${V.c}">
     ${timeCol}
     <div>
       <div class="ev-name">${esc(e.n)}</div>
       <div class="ev-venue"><span class="dot"></span>${esc(V.name)}${e.ad?` <span class="ad-hours">· ${e.ad}</span>`:""} ${badge}</div>
     </div>
+    <button class="star${on?" on":""}" data-fav="${e.id}" aria-label="${on?"移出想去":"加入想去"}">${on?"♥":"♡"}</button>
   </div>`;
 }
 
@@ -479,6 +522,7 @@ function render(){
   const now=nowMin();
   const tokens=query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   const match=e=>{
+    if(favOnly&&!favs.has(e.id))return false;
     if(activeVenue!=="all"&&e.v!==activeVenue)return false;
     if(tokens.length){
       const hay=(e.n+" "+VENUES[e.v].name+" "+e.zh).toLowerCase();
@@ -523,21 +567,59 @@ function render(){
     </details>`;
   }
   if(!html){
-    html=`<div class="empty"><b>沒有符合的活動</b>換個關鍵字，或把場地篩選切回「全部」。</div>`;
+    html=favOnly
+      ?`<div class="empty"><b>還沒有想去的活動</b>點卡片右側的 ♡ 加入，這裡會依時間排好。</div>`
+      :`<div class="empty"><b>沒有符合的活動</b>換個關鍵字，或把場地篩選切回「全部」。</div>`;
   }
-  document.getElementById("main").innerHTML=html;
+  const mainEl=document.getElementById("main");
+  mainEl.innerHTML=html;
+  mainEl.querySelectorAll("[data-fav]").forEach(b=>b.addEventListener("click",ev=>{
+    ev.stopPropagation(); toggleFav(+b.dataset.fav);
+  }));
+  renderNextUp();
+}
+
+/* ================= NEXT UP ================= */
+function renderNextUp(){
+  const box=document.getElementById("nextup");
+  const now=nowMin();
+  const upcoming=EV.filter(e=>favs.has(e.id)&&!e.ad&&e.t+LIVE_WINDOW>now).sort((a,b)=>a.t-b.t);
+  if(!upcoming.length){box.classList.remove("show");box.innerHTML="";return}
+  const e=upcoming[0], V=VENUES[e.v], f=fmt(e.t);
+  const diff=e.t-now;
+  let count, unit;
+  if(diff<=0){count="LIVE";unit="進行中"}
+  else if(diff<60){count=diff;unit="分鐘後"}
+  else{count=`${Math.floor(diff/60)}:${String(diff%60).padStart(2,"0")}`;unit="小時後"}
+  let walk="";
+  if(userPos){
+    const d=distM(userPos.lat,userPos.lng,V.lat,V.lng);
+    walk=` · 距離 ${d<950?Math.round(d/10)*10+" m":(d/1000).toFixed(1)+" km"}，步行約 ${Math.max(1,Math.round(d/80))} 分`;
+  }
+  box.innerHTML=`<div class="nu-card">
+    <div class="nu-l">
+      <div class="nu-tag">下一站${upcoming.length>1?` · 之後還有 ${upcoming.length-1} 個`:""}</div>
+      <div class="nu-name">${esc(e.n)}</div>
+      <div class="nu-meta">${f.h} ${f.ap} · ${esc(V.name)}${walk}</div>
+    </div>
+    <div class="nu-r"><div class="nu-count">${count}<small>${unit}</small></div></div>
+  </div>`;
+  box.classList.add("show");
 }
 
 /* ================= CHIPS ================= */
 function renderChips(){
   const el=document.getElementById("chips");
-  let h=`<button class="chip${activeVenue==="all"?" on":""}" data-v="all">全部</button>`;
+  let h=`<button class="chip fav-chip${favOnly?" on":""}" data-fav-chip>♥ 想去${favs.size?` ${favs.size}`:""}</button>`;
+  h+=`<button class="chip${activeVenue==="all"&&!favOnly?" on":""}" data-v="all">全部</button>`;
   for(const[k,V]of Object.entries(VENUES)){
     h+=`<button class="chip${activeVenue===k?" on":""}" data-v="${k}" style="--c:${V.c}"><span class="dot"></span>${esc(V.name)}</button>`;
   }
   el.innerHTML=h;
   el.querySelectorAll(".chip").forEach(b=>b.addEventListener("click",()=>{
-    activeVenue=b.dataset.v; renderChips(); render();
+    if(b.hasAttribute("data-fav-chip")){favOnly=!favOnly}
+    else{activeVenue=b.dataset.v; favOnly=false}
+    renderChips(); render();
     if(document.querySelector("#mapsvg .zone")) syncMap();
   }));
 }
@@ -611,7 +693,7 @@ function onPos(p){
     pin.style.display="none";
     note.textContent="你目前在園區範圍外——已依直線距離列出最近的場域。";
   }
-  renderNearby();
+  renderNearby(); renderNextUp();
 }
 function onPosErr(err){
   document.getElementById("mapNote").textContent="無法取得定位（"+(err.code===1?"權限被拒":"訊號不佳")+"）。可直接點色塊瀏覽各場域。";
@@ -677,7 +759,7 @@ const qEl=document.getElementById("q"), sb=document.getElementById("sb");
 qEl.addEventListener("input",()=>{query=qEl.value;sb.classList.toggle("has-q",!!query);render()});
 document.getElementById("clr").addEventListener("click",()=>{qEl.value="";query="";sb.classList.remove("has-q");render();qEl.focus()});
 renderChips(); render(); renderMap(); tickClock();
-setInterval(()=>{tickClock();render();renderNearby()},30000); // 每 30 秒重算狀態
+setInterval(()=>{tickClock();render();renderNearby();renderNextUp()},30000); // 每 30 秒重算狀態
 </script>
 </body>
 </html>
